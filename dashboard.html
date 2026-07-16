@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VP Technology - Project Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            border-left: 4px solid #2c5282;
+        }
+
+        h1 {
+            color: #2c5282;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1em;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            min-width: 150px;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            border-left-color: #4299e1;
+        }
+
+        .metric-label {
+            color: #718096;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2d3748;
+            line-height: 1.1;
+            word-break: break-word;
+        }
+
+        .metric-subtext {
+            color: #a0aec0;
+            font-size: 0.7em;
+            margin-top: 6px;
+            line-height: 1.2;
+        }
+
+        /* Responsive metric cards */
+        @media (max-width: 1200px) {
+            .metric-value {
+                font-size: 1.2em;
+            }
+            
+            .metric-subtext {
+                font-size: 0.65em;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .metric-value {
+                font-size: 1.1em;
+            }
+            
+            .metric-subtext {
+                font-size: 0.6em;
+            }
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #2c5282;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background: #2a4365;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 0.8em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-todo { background: #fed7d7; color: #c53030; }
+        .status-inprogress { background: #bee3f8; color: #2c5282; }
+        .status-inreview { background: #d6bcfa; color: #553c9a; }
+        .status-done { background: #c6f6d5; color: #2f855a; }
+
+        .priority-high { color: #c53030; font-weight: 600; }
+        .priority-medium { color: #d69e2e; font-weight: 600; }
+        .priority-low { color: #38a169; font-weight: 600; }
+
+        .quality-high { color: #2f855a; font-weight: 600; }
+        .quality-medium { color: #d69e2e; font-weight: 600; }
+        .quality-low { color: #c53030; font-weight: 600; }
+
+        /* Quality is now a bug count: 0 = green, 1 = amber, 2+ = red */
+        .quality-rag-green { color: #2f855a; font-weight: 600; }
+        .quality-rag-amber { color: #d69e2e; font-weight: 600; }
+        .quality-rag-red { color: #c53030; font-weight: 600; }
+
+        .positive { color: #2f855a; font-weight: 600; }
+        .negative { color: #c53030; font-weight: 600; }
+
+        button {
+            background: #2c5282;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #2a4365;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 82, 130, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .search-box {
+            flex: 1;
+        }
+
+        /* Executive Summary Banner */
+        .exec-summary {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            padding: 30px 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(44, 82, 130, 0.25);
+            margin-bottom: 25px;
+            color: white;
+        }
+
+        .exec-summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .exec-summary-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .exec-overall-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .exec-overall-badge .badge-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.2);
+        }
+
+        .exec-overall-badge .badge-dot.green { background: #48bb78; }
+        .exec-overall-badge .badge-dot.amber { background: #ed8936; }
+        .exec-overall-badge .badge-dot.red { background: #e53e3e; }
+
+        .exec-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .exec-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 18px 20px;
+            border-radius: 10px;
+            border-left: 4px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .exec-stat.stat-green { border-left-color: #48bb78; }
+        .exec-stat.stat-amber { border-left-color: #ed8936; }
+        .exec-stat.stat-red { border-left-color: #e53e3e; }
+
+        .exec-stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .exec-stat-label {
+            font-size: 0.8em;
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Section Divider (drill-down navigation) */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 35px 0 20px 0;
+        }
+
+        .section-step {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #2c5282;
+            color: white;
+            font-weight: 700;
+            font-size: 1em;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(44, 82, 130, 0.3);
+        }
+
+        .section-heading {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-heading .section-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .section-heading .section-desc {
+            font-size: 0.85em;
+            color: #718096;
+        }
+
+        .section-divider .section-line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, #cbd5e0 0%, transparent 100%);
+        }
+
+        /* RAG Status Section */
+        .rag-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .rag-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rag-grid {
+            display: block;
+            width: 100%;
+        }
+
+        /* Project status tags — one combined RAG indicator per project */
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .project-tags-heading {
+            width: 100%;
+            font-size: 0.85em;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+
+        .project-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        .project-tag .tag-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            flex-shrink: 0;
+        }
+
+        .project-tag .tag-count {
+            background: rgba(255,255,255,0.25);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.82em;
+        }
+
+        .project-tag.green { background: #38a169; }
+        .project-tag.amber { background: #d69e2e; }
+        .project-tag.red   { background: #e53e3e; }
+
+        .rag-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .rag-table thead {
+            background: #2c5282;
+            color: white;
+        }
+
+        .rag-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #2a4365;
+        }
+
+        .rag-table th.col-project {
+            width: 22%;
+        }
+
+        .rag-table th.col-tasks {
+            width: 10%;
+            text-align: center;
+        }
+
+        .rag-table th.col-efforts,
+        .rag-table th.col-timeline,
+        .rag-table th.col-quality {
+            width: 22.6%;
+            text-align: center;
+        }
+
+        .rag-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+
+        .rag-table tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .rag-table td {
+            padding: 8px 10px;
+            font-size: 0.9em;
+        }
+
+        .rag-table td.col-project {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .rag-table td.col-project .project-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rag-table td.col-project .project-meta {
+            font-size: 0.8em;
+            color: #718096;
+            font-weight: normal;
+            margin-top: 4px;
+        }
+
+        .rag-table td.col-tasks {
+            text-align: center;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .rag-table td.rag-cell {
+            text-align: center;
+        }
+
+        .rag-status-box {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            min-width: 0;
+            text-align: left;
+        }
+
+        /* Stack the value + detail text beside the indicator */
+        .rag-status-box .rag-status-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+
+        .rag-status-box.status-green {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border: 1px solid #48bb78;
+        }
+
+        .rag-status-box.status-amber {
+            background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+            border: 1px solid #ed8936;
+        }
+
+        .rag-status-box.status-red {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border: 1px solid #e53e3e;
+        }
+
+        .rag-status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.7em;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .rag-status-indicator.green { background: #48bb78; }
+        .rag-status-indicator.amber { background: #ed8936; }
+        .rag-status-indicator.red { background: #e53e3e; }
+
+        .rag-status-value {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .rag-status-detail {
+            font-size: 0.75em;
+            color: #718096;
+        }
+
+        .rag-legend-inline {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+            font-size: 0.8em;
+            justify-content: center;
+        }
+
+        .rag-legend-inline .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a5568;
+        }
+
+        .rag-legend-inline .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .rag-legend-inline .legend-dot.green { background: #48bb78; }
+        .rag-legend-inline .legend-dot.amber { background: #ed8936; }
+        .rag-legend-inline .legend-dot.red { background: #e53e3e; }
+
+        .rag-card {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .rag-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .rag-card.status-green { border-left: 5px solid #48bb78; }
+        .rag-card.status-amber { border-left: 5px solid #ed8936; }
+        .rag-card.status-red { border-left: 5px solid #e53e3e; }
+
+        .rag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rag-metric-name {
+            font-size: 1em;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .rag-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1em;
+            color: white;
+        }
+
+        .rag-indicator.green { background: #48bb78; }
+        .rag-indicator.amber { background: #ed8936; }
+        .rag-indicator.red { background: #e53e3e; }
+
+        .rag-details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .rag-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.82em;
+        }
+
+        .rag-detail-label {
+            color: #718096;
+        }
+
+        .rag-detail-value {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .rag-status-message {
+            margin-top: 12px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.78em;
+            color: #4a5568;
+            line-height: 1.5;
+            border-left: 3px solid #cbd5e0;
+        }
+
+        .rag-legend {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .rag-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            color: #4a5568;
+        }
+
+        .rag-legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+        }
+
+        .rag-legend-color.green { background: #48bb78; }
+        .rag-legend-color.amber { background: #ed8936; }
+        .rag-legend-color.red { background: #e53e3e; }
+
+        /* Grouped Table Styles */
+        .grouped-view-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .group-level-1 {
+            background: #2c5282;
+            color: white;
+            padding: 18px 25px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .group-level-1:hover {
+            background: #2a4365;
+            transform: translateX(3px);
+        }
+
+        .group-level-2 {
+            background: #4299e1;
+            color: white;
+            padding: 15px 25px 15px 45px;
+            margin-bottom: 1px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+
+        .group-level-2:hover {
+            background: #3182ce;
+            transform: translateX(3px);
+        }
+
+        .group-level-3 {
+            background: #f7fafc;
+            color: #2d3748;
+            padding: 12px 25px 12px 65px;
+            margin-bottom: 1px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            font-weight: 600;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .group-level-3:hover {
+            background: #edf2f7;
+            border-left-color: #4299e1;
+        }
+
+        .group-header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0; /* Allows flex items to shrink */
+        }
+
+        .toggle-icon {
+            font-size: 0.7em;
+            transition: transform 0.3s;
+            opacity: 0.8;
+            flex-shrink: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .group-level-1 .toggle-icon {
+            background: #48bb78; /* Green for project */
+        }
+
+        .group-level-2 .toggle-icon {
+            background: #ed8936; /* Amber for epic */
+        }
+
+        .group-level-3 .toggle-icon {
+            background: #4299e1; /* Blue for story */
+        }
+
+        .group-level-4 {
+            background: #ffffff;
+            color: #2d3748;
+            padding: 10px 25px 10px 85px;
+            margin-bottom: 1px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .group-level-4:hover {
+            background: #f7fafc;
+            border-left-color: #805ad5;
+        }
+
+        .group-level-4 .toggle-icon {
+            background: #805ad5; /* Purple for task/bug type */
+        }
+
+        .collapsed .toggle-icon {
+            opacity: 0.5;
+        }
+
+        .group-title {
+            font-weight: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .group-title span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .group-summary {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 0.8em;
+            opacity: 0.95;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .summary-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            font-size: 0.85em;
+        }
+
+        .group-level-3 .summary-badge {
+            background: rgba(0, 0, 0, 0.05);
+            color: #4a5568;
+        }
+
+        .task-details-container {
+            background: white;
+            padding: 0;
+            margin-bottom: 1px;
+        }
+
+        .task-details-row {
+            display: grid;
+            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 80px 96px;
+            gap: 8px;
+            padding: 12px 20px 12px 85px;
+            border-bottom: 1px solid #f1f3f5;
+            align-items: center;
+            transition: all 0.2s;
+            font-size: 0.85em;
+            border-left: 4px solid transparent;
+        }
+
+        .task-details-row:hover {
+            background: #f8f9fa;
+        }
+
+        .task-details-row.task-rag-green {
+            border-left-color: #48bb78;
+            background: linear-gradient(90deg, rgba(72, 187, 120, 0.05) 0%, transparent 100%);
+        }
+
+        .task-details-row.task-rag-amber {
+            border-left-color: #ed8936;
+            background: linear-gradient(90deg, rgba(237, 137, 54, 0.05) 0%, transparent 100%);
+        }
+
+        .task-details-row.task-rag-red {
+            border-left-color: #e53e3e;
+            background: linear-gradient(90deg, rgba(229, 62, 62, 0.05) 0%, transparent 100%);
+        }
+
+        /* Three-metric RAG chips (Efforts / Timeline / Quality) for all levels */
+        .metric-chips {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .metric-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            line-height: 1.2;
+        }
+
+        .metric-chip.metric-chip-sm {
+            padding: 1px 6px;
+            font-size: 0.9em;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+        .metric-chip.green { background: #48bb78; }
+        .metric-chip.amber { background: #ed8936; }
+        .metric-chip.red   { background: #e53e3e; }
+
+        /* Task row: dedicate a cell to the three metric chips */
+        .task-metrics-cell {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        /* Legend for the three-metric health indicators */
+        .metric-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 22px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85em;
+            color: #4a5568;
+        }
+
+        .metric-legend-title {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .metric-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metric-legend-key {
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .task-details-header {
+            display: grid;
+            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 80px 96px;
+            gap: 8px;
+            padding: 10px 20px 10px 85px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 0.75em;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-cell {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: inherit;
+        }
+
+        .group-collapsed {
+            display: none;
+        }
+
+        .expand-all-btn {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #2c5282;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .expand-all-btn:hover {
+            background: #2a4365;
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        /* Fix overflow issues */
+        @media (max-width: 1400px) {
+            .group-summary {
+                gap: 10px;
+            }
+            
+            .summary-badge {
+                font-size: 0.75em;
+                padding: 2px 8px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .task-details-row,
+            .task-details-header {
+                grid-template-columns: repeat(13, minmax(60px, 1fr));
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .group-summary {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Technology Leadership Dashboard</h1>
+            <p class="subtitle">Real-time project monitoring and analytics</p>
+        </header>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Project</label>
+                <select id="projectFilter" onchange="applyFilters()">
+                    <option value="all">All Projects</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" onchange="applyFilters()">
+                    <option value="all">All Status</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Priority</label>
+                <select id="priorityFilter" onchange="applyFilters()">
+                    <option value="all">All Priorities</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Quality (bugs)</label>
+                <select id="qualityFilter" onchange="applyFilters()">
+                    <option value="all">All Bug Counts</option>
+                </select>
+            </div>
+
+            <div class="filter-group search-box">
+                <label>Search</label>
+                <input type="text" id="searchBox" placeholder="Search tasks, stories, epics..." oninput="applyFilters()">
+            </div>
+
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button onclick="resetFilters()">Reset Filters</button>
+            </div>
+        </div>
+
+        <!-- LEVEL 1: Executive Summary - highest level, one-glance health -->
+        <div class="exec-summary" id="execSummary">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- LEVEL 2: Key Metrics -->
+        <div class="section-divider">
+            <div class="section-step">1</div>
+            <div class="section-heading">
+                <span class="section-name">Key Metrics</span>
+                <span class="section-desc">Overall performance indicators at a glance</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="metrics" id="metrics"></div>
+
+        <!-- LEVEL 3: Project Health Status -->
+        <div class="section-divider">
+            <div class="section-step">2</div>
+            <div class="section-heading">
+                <span class="section-name">Project Health Status</span>
+                <span class="section-desc">RAG status per project — spot which projects need attention</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="rag-container">
+            <div class="rag-grid" id="ragGrid">
+                <!-- RAG cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- LEVEL 4: Detailed drill-down -->
+        <div class="section-divider">
+            <div class="section-step">3</div>
+            <div class="section-heading">
+                <span class="section-name">Detailed Task View</span>
+                <span class="section-desc">Drill down: Project → Epic → Story → Task/Bug</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="table-container">
+            <button class="expand-all-btn" onclick="toggleAllGroups()">
+                <span id="toggleBtnText">Expand All</span>
+            </button>
+            <div class="metric-legend">
+                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                <span class="metric-legend-item metric-legend-key">
+                    <span class="metric-chip green">&nbsp;</span> On track
+                    <span class="metric-chip amber">&nbsp;</span> At risk
+                    <span class="metric-chip red">&nbsp;</span> Critical
+                </span>
+            </div>
+            <div class="grouped-view-container" id="groupedTableContainer"></div>
+        </div>
+
+        <!-- LEVEL 5: Sprint View -->
+        <div class="section-divider">
+            <div class="section-step">4</div>
+            <div class="section-heading">
+                <span class="section-name">Sprint View</span>
+                <span class="section-desc">Drill down by sprint: Sprint → Project → Epic → Story → Task/Bug</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="table-container">
+            <button class="expand-all-btn" onclick="toggleAllSprintGroups()">
+                <span id="sprintToggleBtnText">Expand All</span>
+            </button>
+            <div class="metric-legend">
+                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                <span class="metric-legend-item metric-legend-key">
+                    <span class="metric-chip green">&nbsp;</span> On track
+                    <span class="metric-chip amber">&nbsp;</span> At risk
+                    <span class="metric-chip red">&nbsp;</span> Critical
+                </span>
+            </div>
+            <div class="grouped-view-container" id="sprintTableContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let charts = {};
+        let sortDirection = {};
+
+        // Allowed bugs per ticket. Quality (bug count): within allowance (<= this) = green, over = red.
+        const ALLOWED_BUGS = 1;
+
+        function calculateRAGStatus() {
+            const ragGrid = document.getElementById('ragGrid');
+            
+            // Group data by project
+            const projectGroups = {};
+            filteredData.forEach(item => {
+                const project = item.Project || 'Unknown Project';
+                if (!projectGroups[project]) projectGroups[project] = [];
+                projectGroups[project].push(item);
+            });
+            
+            // Collect one combined RAG tag per project (worst metric wins)
+            const projectTags = [];
+
+            let html = '<table class="rag-table"><thead><tr>';
+            html += '<th class="col-project">Project</th>';
+            html += '<th class="col-tasks">Tasks</th>';
+            html += '<th class="col-efforts">⏱️ Efforts</th>';
+            html += '<th class="col-timeline">📅 Timeline</th>';
+            html += '<th class="col-quality">⭐ Quality</th>';
+            html += '</tr></thead><tbody>';
+            
+            // Generate row for each project
+            Object.keys(projectGroups).sort().forEach(projectName => {
+                const projectData = projectGroups[projectName];
+                const totalTasks = projectData.length;
+                
+                // Calculate Efforts Status (Effort spent vs Completion)
+                const completedTasks = projectData.filter(item => item.Status === 'Done').length;
+                const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+                
+                // Calculate effort spent (budget consumed as a percentage of budget planned)
+                const totalBudgetPlanned = projectData.reduce((sum, item) => sum + item['Budget Planned'], 0);
+                const totalBudgetConsumed = projectData.reduce((sum, item) => sum + item['Budget Consumed'], 0);
+                const effortSpentRate = totalBudgetPlanned > 0 ? (totalBudgetConsumed / totalBudgetPlanned) * 100 : 0;
+                
+                // Compare completion % against effort spent %
+                //   completed MORE than effort spent  -> Green (ahead of schedule)
+                //   completed roughly EQUAL to effort  -> Amber (on par, watch closely)
+                //   completed LESS than effort spent   -> Red (behind: spending outpaces delivery)
+                const effortEfficiency = completionRate - effortSpentRate; // Positive = ahead, Negative = behind
+                const AMBER_BAND = 5; // +/- tolerance (in %) treated as "on par"
+
+                let effortsStatus;
+                if (effortEfficiency > AMBER_BAND) {
+                    effortsStatus = 'green';
+                } else if (effortEfficiency < -AMBER_BAND) {
+                    effortsStatus = 'red';
+                } else {
+                    effortsStatus = 'amber';
+                }
+                
+                // Calculate Timeline Status (Completed Due date vs Plan)
+                // Treat the "Date" field as the planned due date. Of the tasks that were
+                // planned to be finished by today, how many are actually Done (on plan)?
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const dueByNow = projectData.filter(item => {
+                    const d = new Date(item.Date);
+                    return !isNaN(d) && d <= today;
+                });
+                const completedOnPlan = dueByNow.filter(item => item.Status === 'Done').length;
+                const overdueCount = dueByNow.length - completedOnPlan; // planned by now but not Done
+                const scheduleAdherence = dueByNow.length > 0
+                    ? (completedOnPlan / dueByNow.length) * 100
+                    : 100; // nothing due yet -> on plan
+
+                // Timeline status:
+                //   Green: >= 90% of due-by-now tasks completed on plan
+                //   Amber: 70% - 90%
+                //   Red:   < 70% (many tasks overdue vs plan)
+                let timelineStatus;
+                if (scheduleAdherence >= 90) {
+                    timelineStatus = 'green';
+                } else if (scheduleAdherence >= 70) {
+                    timelineStatus = 'amber';
+                } else {
+                    timelineStatus = 'red';
+                }
+
+                // Calculate Quality Status (Quality = number of bugs per item)
+                const totalBugs = projectData.reduce((s, item) => s + (Number(item.Quality) || 0), 0);
+                const highQualityCount = projectData.filter(item => qualityRAG(item.Quality) === 'green').length;
+                const lowQualityCount = projectData.filter(item => qualityRAG(item.Quality) === 'red').length;
+                const qualityScore = totalTasks > 0 ? ((highQualityCount / totalTasks) * 100) : 0;
+                const avgBugs = totalTasks > 0 ? (totalBugs / totalTasks) : 0;
+
+                // Quality status: average bugs per ticket vs the allowance (ALLOWED_BUGS)
+                let qualityStatus = 'green';
+                if (avgBugs > ALLOWED_BUGS * 1.5) {
+                    qualityStatus = 'red';
+                } else if (avgBugs > ALLOWED_BUGS) {
+                    qualityStatus = 'amber';
+                }
+
+                // Combined project status: red if ANY metric is red,
+                // else amber if ANY is amber, otherwise green.
+                let overallStatus = 'green';
+                if (effortsStatus === 'red' || timelineStatus === 'red' || qualityStatus === 'red') {
+                    overallStatus = 'red';
+                } else if (effortsStatus === 'amber' || timelineStatus === 'amber' || qualityStatus === 'amber') {
+                    overallStatus = 'amber';
+                }
+                projectTags.push(`
+                    <span class="project-tag ${overallStatus}" title="${projectName}: ${overallStatus.toUpperCase()}">
+                        <span class="tag-dot"></span>
+                        <span>${projectName}</span>
+                        <span class="tag-count">${totalTasks}</span>
+                    </span>
+                `);
+
+                html += '<tr>';
+                
+                // Project column
+                html += `
+                    <td class="col-project">
+                        <div class="project-name">
+                            <span>📁</span>
+                            <span>${projectName}</span>
+                        </div>
+                        <div class="project-meta">${formatCurrency(totalBudgetPlanned)} planned</div>
+                    </td>
+                `;
+                
+                // Tasks column
+                html += `<td class="col-tasks">${totalTasks}</td>`;
+                
+                // Efforts column
+                html += `
+                    <td class="rag-cell">
+                        <div class="rag-status-box status-${effortsStatus}">
+                            <div class="rag-status-indicator ${effortsStatus}">${effortsStatus === 'green' ? '✓' : effortsStatus === 'amber' ? '!' : '✗'}</div>
+                            <div class="rag-status-text">
+                                <div class="rag-status-value">${completionRate.toFixed(0)}% done</div>
+                                <div class="rag-status-detail">${effortSpentRate.toFixed(0)}% effort spent</div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+
+                // Timeline column (Completed Due date vs Plan)
+                html += `
+                    <td class="rag-cell">
+                        <div class="rag-status-box status-${timelineStatus}">
+                            <div class="rag-status-indicator ${timelineStatus}">${timelineStatus === 'green' ? '✓' : timelineStatus === 'amber' ? '!' : '✗'}</div>
+                            <div class="rag-status-text">
+                                <div class="rag-status-value">${scheduleAdherence.toFixed(0)}% on plan</div>
+                                <div class="rag-status-detail">${overdueCount} overdue vs plan</div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+
+                // Quality column
+                html += `
+                    <td class="rag-cell">
+                        <div class="rag-status-box status-${qualityStatus}">
+                            <div class="rag-status-indicator ${qualityStatus}">${qualityStatus === 'green' ? '✓' : qualityStatus === 'amber' ? '!' : '✗'}</div>
+                            <div class="rag-status-text">
+                                <div class="rag-status-value">${totalBugs} bugs</div>
+                                <div class="rag-status-detail">${lowQualityCount}/${totalTasks} with 2+ bugs</div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            // Add legend
+            html += `
+                <div class="rag-legend-inline">
+                    <div class="legend-item">
+                        <div class="legend-dot green"></div>
+                        <span><strong>Green:</strong> On track</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot amber"></div>
+                        <span><strong>Amber:</strong> At risk</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot red"></div>
+                        <span><strong>Red:</strong> Critical</span>
+                    </div>
+                </div>
+            `;
+            
+            // Build the project tags summary (single combined indicator per project)
+            const tagsHtml = `
+                <div class="project-tags">
+                    <div class="project-tags-heading">Project status at a glance</div>
+                    ${projectTags.join('')}
+                </div>
+            `;
+
+            ragGrid.innerHTML = tagsHtml + html;
+        }
+
+        // Load data from jira_data.json
+        fetch('jira_data.json')
+            .then(response => response.text())
+            .then(text => {
+                // jira_data.json may contain NaN tokens (invalid strict JSON)
+                allData = JSON.parse(text.replace(/NaN/g, 'null'));
+                initializeDashboard();
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                alert('Error loading JIRA data. Please ensure jira_data.json is in the same directory.');
+            });
+
+        function initializeDashboard() {
+            // Process data to calculate missing/derived fields
+            allData.forEach(item => {
+                item['Budget Remaining'] = (item['Budget Planned'] || 0) - (item['Budget Consumed'] || 0);
+                item['Saving Pending'] = (item['Saving Planned'] || 0) - (item['Saving Achived'] || 0);
+            });
+
+            // Initialize filtered data to all data
+            filteredData = allData;
+
+            populateFilters();
+            updateDashboard();
+        }
+
+        function populateFilters() {
+            const projects = [...new Set(allData.map(d => d.Project))];
+            const statuses = [...new Set(allData.map(d => d.Status))];
+            const priorities = [...new Set(allData.map(d => d.Priority))];
+            const qualities = [...new Set(allData.map(d => d.Quality))].sort((a, b) => a - b);
+
+            populateSelect('projectFilter', projects);
+            populateSelect('statusFilter', statuses);
+            populateSelect('priorityFilter', priorities);
+            populateSelect('qualityFilter', qualities, qualityLabel);
+        }
+
+        function populateSelect(id, options, labelFn) {
+            const select = document.getElementById(id);
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = labelFn ? labelFn(option) : option;
+                select.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            const projectFilter = document.getElementById('projectFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const qualityFilter = document.getElementById('qualityFilter').value;
+            const searchText = document.getElementById('searchBox').value.toLowerCase();
+
+            filteredData = allData.filter(item => {
+                const matchesProject = projectFilter === 'all' || item.Project === projectFilter;
+                const matchesStatus = statusFilter === 'all' || item.Status === statusFilter;
+                const matchesPriority = priorityFilter === 'all' || item.Priority === priorityFilter;
+                const matchesQuality = qualityFilter === 'all' || String(item.Quality) === qualityFilter;
+                const matchesSearch = searchText === '' || 
+                    (item.Story && item.Story.toLowerCase().includes(searchText)) ||
+                    (item.Task && item.Task.toLowerCase().includes(searchText)) ||
+                    (item.EPIC && item.EPIC.toLowerCase().includes(searchText)) ||
+                    (item.Assignee && item.Assignee.toLowerCase().includes(searchText));
+
+                return matchesProject && matchesStatus && matchesPriority && matchesQuality && matchesSearch;
+            });
+
+            updateDashboard();
+        }
+
+        function resetFilters() {
+            document.getElementById('projectFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('priorityFilter').value = 'all';
+            document.getElementById('qualityFilter').value = 'all';
+            document.getElementById('searchBox').value = '';
+            applyFilters();
+        }
+
+        // Quality is the number of open bugs on an item.
+        // Within allowance (<= ALLOWED_BUGS) = green, over allowance = red.
+        function qualityRAG(q) {
+            const bugs = Number(q) || 0;
+            return bugs > ALLOWED_BUGS ? 'red' : 'green';
+        }
+
+        function qualityLabel(q) {
+            const bugs = Number(q) || 0;
+            return bugs === 1 ? '1 bug' : `${bugs} bugs`;
+        }
+
+        // Overall RAG for a single task/bug, combining status, budget and bug count
+        function computeTaskRAG(item) {
+            let taskRAG = 'green';
+            const qRAG = qualityRAG(item.Quality);
+            if (item.Status === 'To Do' || item['Budget Remaining'] < 0) {
+                taskRAG = 'red';
+            } else if (item.Status === 'In Progress' || qRAG === 'red' || item.Priority === 'High') {
+                if (taskRAG !== 'red') taskRAG = 'amber';
+            }
+            if (qRAG === 'red') {
+                taskRAG = 'red';
+            } else if (qRAG === 'amber' && taskRAG !== 'red') {
+                taskRAG = 'amber';
+            }
+            if (item.Status === 'Done' && item['Budget Remaining'] >= 0 && qRAG !== 'red') {
+                taskRAG = 'green';
+            }
+            return taskRAG;
+        }
+
+        function updateDashboard() {
+            updateExecSummary();
+            calculateRAGStatus();
+            updateMetrics();
+            updateTable();
+            updateSprintTable();
+        }
+
+        function updateExecSummary() {
+            const execSummary = document.getElementById('execSummary');
+            
+            const totalTasks = filteredData.length;
+            const completedTasks = filteredData.filter(item => item.Status === 'Done').length;
+            const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            
+            // Group by project to determine per-project health
+            const projectGroups = {};
+            filteredData.forEach(item => {
+                const project = item.Project || 'Unknown Project';
+                if (!projectGroups[project]) projectGroups[project] = [];
+                projectGroups[project].push(item);
+            });
+            
+            // Determine RAG status for each project (efforts + quality combined)
+            let greenProjects = 0, amberProjects = 0, redProjects = 0;
+            
+            Object.keys(projectGroups).forEach(projectName => {
+                const projectData = projectGroups[projectName];
+                const pTotal = projectData.length;
+                const pCompleted = projectData.filter(i => i.Status === 'Done').length;
+                const pCompletionRate = pTotal > 0 ? (pCompleted / pTotal) * 100 : 0;
+                
+                const pBudgetPlanned = projectData.reduce((s, i) => s + i['Budget Planned'], 0);
+                const pBudgetConsumed = projectData.reduce((s, i) => s + i['Budget Consumed'], 0);
+                const pEffortSpent = pBudgetPlanned > 0 ? (pBudgetConsumed / pBudgetPlanned) * 100 : 0;
+                const efficiency = pCompletionRate - pEffortSpent;
+                
+                const pTotalBugs = projectData.reduce((s, i) => s + (Number(i.Quality) || 0), 0);
+                const pAvgBugs = pTotal > 0 ? pTotalBugs / pTotal : 0;
+
+                // Efforts health: completion progress vs budget/effort spent
+                let effortsHealth = 'green';
+                if (efficiency < -50) effortsHealth = 'red';
+                else if (efficiency < -25) effortsHealth = 'amber';
+
+                // Quality health: average bugs per ticket vs the allowance (ALLOWED_BUGS)
+                let qualityHealth = 'green';
+                if (pAvgBugs > ALLOWED_BUGS * 1.5) qualityHealth = 'red';
+                else if (pAvgBugs > ALLOWED_BUGS) qualityHealth = 'amber';
+
+                // Combined project health: worst of efforts and quality
+                let health = 'green';
+                if (effortsHealth === 'red' || qualityHealth === 'red') {
+                    health = 'red';
+                } else if (effortsHealth === 'amber' || qualityHealth === 'amber') {
+                    health = 'amber';
+                }
+                
+                if (health === 'green') greenProjects++;
+                else if (health === 'amber') amberProjects++;
+                else redProjects++;
+            });
+            
+            const totalProjects = Object.keys(projectGroups).length;
+            
+            // Overall status: red if any red, amber if any amber, else green
+            let overallStatus = 'green';
+            let overallLabel = 'On Track';
+            if (redProjects > 0) {
+                overallStatus = 'red';
+                overallLabel = 'Needs Attention';
+            } else if (amberProjects > 0) {
+                overallStatus = 'amber';
+                overallLabel = 'At Risk';
+            }
+            
+            const totalBugs = filteredData.filter(item => item.Type === 'Bug').length;
+            
+            execSummary.innerHTML = `
+                <div class="exec-summary-header">
+                    <div class="exec-summary-title">
+                        📊 Executive Summary
+                    </div>
+                    <div class="exec-overall-badge">
+                        <span class="badge-dot ${overallStatus}"></span>
+                        <span>Overall: ${overallLabel}</span>
+                    </div>
+                </div>
+                <div class="exec-stats">
+                    <div class="exec-stat">
+                        <div class="exec-stat-value">${totalProjects}</div>
+                        <div class="exec-stat-label">Projects</div>
+                    </div>
+                    <div class="exec-stat stat-green">
+                        <div class="exec-stat-value">${greenProjects}</div>
+                        <div class="exec-stat-label">On Track</div>
+                    </div>
+                    <div class="exec-stat stat-amber">
+                        <div class="exec-stat-value">${amberProjects}</div>
+                        <div class="exec-stat-label">At Risk</div>
+                    </div>
+                    <div class="exec-stat stat-red">
+                        <div class="exec-stat-value">${redProjects}</div>
+                        <div class="exec-stat-label">Critical</div>
+                    </div>
+                    <div class="exec-stat">
+                        <div class="exec-stat-value">${completionRate.toFixed(0)}%</div>
+                        <div class="exec-stat-label">Completion</div>
+                    </div>
+                    <div class="exec-stat">
+                        <div class="exec-stat-value">${totalBugs}</div>
+                        <div class="exec-stat-label">Open Bugs</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateMetrics() {
+            const totalTasks = filteredData.length;
+            const totalStoryPoints = filteredData.reduce((sum, item) => sum + item['Story Points'], 0);
+            const totalBudgetPlanned = filteredData.reduce((sum, item) => sum + item['Budget Planned'], 0);
+            const totalBudgetConsumed = filteredData.reduce((sum, item) => sum + item['Budget Consumed'], 0);
+            const totalBudgetRemaining = filteredData.reduce((sum, item) => sum + item['Budget Remaining'], 0);
+            const totalSavingsPlanned = filteredData.reduce((sum, item) => sum + item['Saving Planned'], 0);
+            const totalSavingsAchieved = filteredData.reduce((sum, item) => sum + item['Saving Achived'], 0);
+            const completedTasks = filteredData.filter(item => item.Status === 'Done').length;
+            const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0;
+            
+            // Calculate budget utilization based on efforts (tasks completed)
+            // If 50% tasks are done, we expect ~50% budget consumed
+            const effortSpentRate = totalBudgetPlanned > 0 ? ((totalBudgetConsumed / totalBudgetPlanned) * 100).toFixed(1) : 0;
+            const budgetEfficiency = (parseFloat(completionRate) - parseFloat(effortSpentRate)).toFixed(1);
+            
+            const savingsRate = totalSavingsPlanned > 0 ? ((totalSavingsAchieved / totalSavingsPlanned) * 100).toFixed(1) : 0;
+
+            const metricsHTML = `
+                <div class="metric-card">
+                    <div class="metric-label">Tasks Completed</div>
+                    <div class="metric-value">${completedTasks}/${totalTasks}</div>
+                    <div class="metric-subtext">${completionRate}% completion rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Story Points</div>
+                    <div class="metric-value">${formatNumber(totalStoryPoints)}</div>
+                    <div class="metric-subtext">Total across all tasks</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Budget vs Efforts</div>
+                    <div class="metric-value ${budgetEfficiency >= 0 ? 'positive' : 'negative'}">${effortSpentRate}% spent</div>
+                    <div class="metric-subtext">${completionRate}% tasks done (${budgetEfficiency >= 0 ? '+' : ''}${budgetEfficiency}% efficiency)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Budget Remaining</div>
+                    <div class="metric-value ${totalBudgetRemaining >= 0 ? 'positive' : 'negative'}">${formatCurrency(totalBudgetRemaining)}</div>
+                    <div class="metric-subtext">${totalBudgetRemaining >= 0 ? 'Under budget' : 'Over budget'}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Savings Achieved</div>
+                    <div class="metric-value">${formatCurrency(totalSavingsAchieved)}/${formatCurrency(totalSavingsPlanned)}</div>
+                    <div class="metric-subtext">${savingsRate}% of target savings</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Overall Progress</div>
+                    <div class="metric-value">${completionRate}%</div>
+                    <div class="metric-subtext">${completedTasks}/${totalTasks} tasks complete</div>
+                </div>
+            `;
+
+            document.getElementById('metrics').innerHTML = metricsHTML;
+        }
+
+        function updateCharts() {
+            // Status Distribution
+            const statusCounts = {};
+            filteredData.forEach(item => {
+                statusCounts[item.Status] = (statusCounts[item.Status] || 0) + 1;
+            });
+
+            updateOrCreateChart('statusChart', {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#fed7d7', '#bee3f8', '#d6bcfa', '#c6f6d5'],
+                        borderColor: ['#c53030', '#2c5282', '#553c9a', '#2f855a'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Budget Chart
+            const totalBudgetPlanned = filteredData.reduce((sum, item) => sum + item['Budget Planned'], 0);
+            const totalBudgetConsumed = filteredData.reduce((sum, item) => sum + item['Budget Consumed'], 0);
+            const totalBudgetRemaining = filteredData.reduce((sum, item) => sum + item['Budget Remaining'], 0);
+
+            updateOrCreateChart('budgetChart', {
+                type: 'bar',
+                data: {
+                    labels: ['Planned', 'Consumed', 'Remaining'],
+                    datasets: [{
+                        label: 'Budget ($)',
+                        data: [totalBudgetPlanned, totalBudgetConsumed, totalBudgetRemaining],
+                        backgroundColor: ['#4299e1', '#2c5282', totalBudgetRemaining >= 0 ? '#48bb78' : '#e53e3e'],
+                        borderColor: ['#3182ce', '#2a4365', totalBudgetRemaining >= 0 ? '#38a169' : '#c53030'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Priority Chart
+            const priorityCounts = {};
+            filteredData.forEach(item => {
+                priorityCounts[item.Priority] = (priorityCounts[item.Priority] || 0) + 1;
+            });
+
+            updateOrCreateChart('priorityChart', {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(priorityCounts),
+                    datasets: [{
+                        data: Object.values(priorityCounts),
+                        backgroundColor: ['#fed7d7', '#faf089', '#c6f6d5'],
+                        borderColor: ['#c53030', '#d69e2e', '#38a169'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Quality Chart (Quality = number of bugs per item)
+            const qualityCounts = {};
+            filteredData.forEach(item => {
+                const bugs = Number(item.Quality) || 0;
+                qualityCounts[bugs] = (qualityCounts[bugs] || 0) + 1;
+            });
+            const qualityKeys = Object.keys(qualityCounts).map(Number).sort((a, b) => a - b);
+            const ragFill = { green: '#c6f6d5', amber: '#faf089', red: '#fed7d7' };
+            const ragLine = { green: '#38a169', amber: '#d69e2e', red: '#c53030' };
+            const qualityColorFor = (bugs) => ragFill[qualityRAG(bugs)];
+            const qualityBorderFor = (bugs) => ragLine[qualityRAG(bugs)];
+
+            updateOrCreateChart('qualityChart', {
+                type: 'bar',
+                data: {
+                    labels: qualityKeys.map(qualityLabel),
+                    datasets: [{
+                        label: 'Number of Items',
+                        data: qualityKeys.map(k => qualityCounts[k]),
+                        backgroundColor: qualityKeys.map(qualityColorFor),
+                        borderColor: qualityKeys.map(qualityBorderFor),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Story Points by Status
+            const storyPointsByStatus = {};
+            filteredData.forEach(item => {
+                storyPointsByStatus[item.Status] = (storyPointsByStatus[item.Status] || 0) + item['Story Points'];
+            });
+
+            updateOrCreateChart('storyPointsChart', {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(storyPointsByStatus),
+                    datasets: [{
+                        label: 'Story Points',
+                        data: Object.values(storyPointsByStatus),
+                        backgroundColor: ['#fed7d7', '#bee3f8', '#d6bcfa', '#c6f6d5'],
+                        borderColor: ['#c53030', '#2c5282', '#553c9a', '#2f855a'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Savings Chart
+            const totalSavingsPlanned = filteredData.reduce((sum, item) => sum + item['Saving Planned'], 0);
+            const totalSavingsAchieved = filteredData.reduce((sum, item) => sum + item['Saving Achived'], 0);
+            const totalSavingsPending = filteredData.reduce((sum, item) => sum + item['Saving Pending'], 0);
+
+            updateOrCreateChart('savingsChart', {
+                type: 'doughnut',
+                data: {
+                    labels: ['Achieved', 'Pending'],
+                    datasets: [{
+                        data: [totalSavingsAchieved, totalSavingsPending],
+                        backgroundColor: ['#c6f6d5', '#faf089'],
+                        borderColor: ['#38a169', '#d69e2e'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function updateOrCreateChart(chartId, config) {
+            if (charts[chartId]) {
+                charts[chartId].destroy();
+            }
+            const ctx = document.getElementById(chartId).getContext('2d');
+            charts[chartId] = new Chart(ctx, config);
+        }
+
+        function updateTable() {
+            const container = document.getElementById('groupedTableContainer');
+            
+            console.log('updateTable called, filteredData length:', filteredData.length);
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No tasks found matching your filters</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Helper function to safely convert to lowercase
+            const safeLowerCase = (str) => {
+                return str && typeof str === 'string' ? str.toLowerCase() : '';
+            };
+            
+            // Function to calculate RAG status for a task/bug
+            const calculateTaskRAG = (item) => computeTaskRAG(item);
+            
+            // Function to roll up RAG status from child items
+            const rollupRAG = (items) => {
+                if (items.length === 0) return 'green';
+                
+                const ragStatuses = items.map(item => item._ragStatus || calculateTaskRAG(item));
+                
+                // If ANY item is red, the rollup is red
+                if (ragStatuses.includes('red')) return 'red';
+                
+                // If ANY item is amber, the rollup is amber
+                if (ragStatuses.includes('amber')) return 'amber';
+                
+                // All items are green
+                return 'green';
+            };
+
+            // ---- Three-metric model: Efforts, Timeline, Quality (per item) ----
+            // Efforts  -> budget/effort consumed vs planned
+            // Timeline -> schedule adherence (status vs due date)
+            // Quality  -> quality rating of the item
+            const calcEfforts = (item) => {
+                if (item['Budget Remaining'] < 0) return 'red';        // over-spent effort
+                const planned = item['Budget Planned'] || 0;
+                const consumed = item['Budget Consumed'] || 0;
+                if (planned <= 0) return 'green';
+                const ratio = consumed / planned;
+                if (ratio > 1) return 'red';
+                if (ratio >= 0.9) return 'amber';                      // nearly exhausted
+                return 'green';
+            };
+
+            const calcTimeline = (item) => {
+                if (item.Status === 'Done') return 'green';
+                const due = new Date(item.Date);
+                if (isNaN(due)) return 'amber';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const daysLeft = Math.floor((due - today) / 86400000);
+                if (daysLeft < 0) return 'red';                        // overdue & not done
+                if (item.Status === 'To Do') return 'amber';           // not started yet
+                if (daysLeft <= 7) return 'amber';                     // due soon, in progress
+                return 'green';
+            };
+
+            const calcQuality = (item) => qualityRAG(item.Quality);
+
+            const calcItemMetrics = (item) => ({
+                efforts: calcEfforts(item),
+                timeline: calcTimeline(item),
+                quality: calcQuality(item)
+            });
+
+            // Roll a single metric up from child items (worst-case wins)
+            const rollupMetric = (items, key) => {
+                const vals = items.map(i => (i._metrics ? i._metrics[key] : calcItemMetrics(i)[key]));
+                if (vals.includes('red')) return 'red';
+                if (vals.includes('amber')) return 'amber';
+                return 'green';
+            };
+
+            const rollupMetrics = (items) => ({
+                efforts: rollupMetric(items, 'efforts'),
+                timeline: rollupMetric(items, 'timeline'),
+                quality: rollupMetric(items, 'quality')
+            });
+
+            // Render the three colour-coded metric chips (E / T / Q)
+            const renderMetricChips = (m, size) => {
+                const cls = size === 'sm' ? 'metric-chip metric-chip-sm' : 'metric-chip';
+                const one = (label, status, name) =>
+                    `<span class="${cls} ${status}" title="${name}: ${status.toUpperCase()}">${label}</span>`;
+                return '<span class="metric-chips">' +
+                    one('E', m.efforts, 'Efforts') +
+                    one('T', m.timeline, 'Timeline') +
+                    one('Q', m.quality, 'Quality') +
+                    '</span>';
+            };
+
+            // Group data by Project -> EPIC -> Story -> Type (Task/Bug)
+            const grouped = {};
+            
+            filteredData.forEach(item => {
+                const project = item.Project || 'Unknown Project';
+                const epic = item.EPIC || 'Unknown Epic';
+                const story = item.Story || 'Unknown Story';
+                const type = item.Type || 'Unknown Type';
+                
+                if (!grouped[project]) grouped[project] = {};
+                if (!grouped[project][epic]) grouped[project][epic] = {};
+                if (!grouped[project][epic][story]) grouped[project][epic][story] = {};
+                if (!grouped[project][epic][story][type]) grouped[project][epic][story][type] = [];
+                
+                // Calculate and store RAG status for each item
+                item._ragStatus = calculateTaskRAG(item);
+                item._metrics = calcItemMetrics(item);
+                grouped[project][epic][story][type].push(item);
+            });
+            
+            // Generate grouped HTML with proper structure
+            let html = '';
+            
+            Object.keys(grouped).sort().forEach((project, pIndex) => {
+                const projectData = grouped[project];
+                const projectTasks = Object.values(projectData).flatMap(epic => 
+                    Object.values(epic).flatMap(story => 
+                        Object.values(story).flat()
+                    )
+                );
+                const projectStats = calculateGroupStats(projectTasks);
+                
+                // Calculate project RAG status (rollup from all tasks)
+                const projectRAG = rollupRAG(projectTasks);
+                const projectIcon = projectRAG === 'green' ? '✓' : projectRAG === 'amber' ? '!' : '✗';
+                const projectMetrics = rollupMetrics(projectTasks);
+                
+                html += `
+                    <div class="group-level-1 collapsed" onclick="toggleGroup('project-${pIndex}', event)">
+                        <div class="group-header-content">
+                            <span class="toggle-icon" style="background: ${projectRAG === 'green' ? '#48bb78' : projectRAG === 'amber' ? '#ed8936' : '#e53e3e'}"></span>
+                            <div class="group-title">
+                                <span>📁</span>
+                                <span>${project}</span>
+                                <span style="margin-left: 10px; font-size: 0.9em; padding: 2px 8px; border-radius: 12px; background: ${projectRAG === 'green' ? '#c6f6d5' : projectRAG === 'amber' ? '#feebc8' : '#fed7d7'}; color: ${projectRAG === 'green' ? '#2f855a' : projectRAG === 'amber' ? '#c05621' : '#c53030'};">${projectIcon}</span>
+                                ${renderMetricChips(projectMetrics)}
+                            </div>
+                        </div>
+                        <div class="group-summary">
+                            <span class="summary-badge">📊 ${projectTasks.length} items</span>
+                            <span class="summary-badge">✓ ${projectStats.completed}/${projectTasks.length}</span>
+                            <span class="summary-badge">🛠️ ${projectStats.effortRemaining}/${projectStats.effortPlanned} pts left</span>
+                            <span class="summary-badge">⭐ ${projectStats.points}</span>
+                        </div>
+                    </div>
+                `;
+                
+                html += `<div class="project-${pIndex}-children group-collapsed">`;
+                
+                Object.keys(projectData).sort().forEach((epic, eIndex) => {
+                    const epicData = projectData[epic];
+                    const epicTasks = Object.values(epicData).flatMap(story => 
+                        Object.values(story).flat()
+                    );
+                    const epicStats = calculateGroupStats(epicTasks);
+                    
+                    // Calculate EPIC RAG status (rollup from all epic tasks)
+                    const epicRAG = rollupRAG(epicTasks);
+                    const epicIcon = epicRAG === 'green' ? '✓' : epicRAG === 'amber' ? '!' : '✗';
+                    const epicMetrics = rollupMetrics(epicTasks);
+                    
+                    html += `
+                        <div class="group-level-2 collapsed" onclick="toggleGroup('epic-${pIndex}-${eIndex}', event)">
+                            <div class="group-header-content">
+                                <span class="toggle-icon" style="background: ${epicRAG === 'green' ? '#48bb78' : epicRAG === 'amber' ? '#ed8936' : '#e53e3e'}"></span>
+                                <div class="group-title">
+                                    <span>🎯</span>
+                                    <span>${epic}</span>
+                                    <span style="margin-left: 10px; font-size: 0.85em; padding: 2px 8px; border-radius: 12px; background: ${epicRAG === 'green' ? '#c6f6d5' : epicRAG === 'amber' ? '#feebc8' : '#fed7d7'}; color: ${epicRAG === 'green' ? '#2f855a' : epicRAG === 'amber' ? '#c05621' : '#c53030'};">${epicIcon}</span>
+                                    ${renderMetricChips(epicMetrics)}
+                                </div>
+                            </div>
+                            <div class="group-summary">
+                                <span class="summary-badge">📊 ${epicTasks.length}</span>
+                                <span class="summary-badge">✓ ${epicStats.completed}/${epicTasks.length}</span>
+                                <span class="summary-badge">🛠️ ${epicStats.effortRemaining}/${epicStats.effortPlanned} pts left</span>
+                                <span class="summary-badge">⭐ ${epicStats.points}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    html += `<div class="epic-${pIndex}-${eIndex}-children group-collapsed">`;
+                    
+                    Object.keys(epicData).sort().forEach((story, sIndex) => {
+                        const storyData = epicData[story];
+                        const storyTasks = Object.values(storyData).flat();
+                        const storyStats = calculateGroupStats(storyTasks);
+                        
+                        // Calculate Story RAG status (rollup from all story tasks)
+                        const storyRAG = rollupRAG(storyTasks);
+                        const storyIcon = storyRAG === 'green' ? '✓' : storyRAG === 'amber' ? '!' : '✗';
+                        const storyMetrics = rollupMetrics(storyTasks);
+                        
+                        html += `
+                            <div class="group-level-3 collapsed" onclick="toggleGroup('story-${pIndex}-${eIndex}-${sIndex}', event)">
+                                <div class="group-header-content">
+                                    <span class="toggle-icon" style="background: ${storyRAG === 'green' ? '#48bb78' : storyRAG === 'amber' ? '#ed8936' : '#e53e3e'}; border-color: #4299e1"></span>
+                                    <div class="group-title">
+                                        <span>📝</span>
+                                        <span>${story}</span>
+                                        <span style="margin-left: 10px; font-size: 0.8em; padding: 2px 6px; border-radius: 10px; background: ${storyRAG === 'green' ? '#c6f6d5' : storyRAG === 'amber' ? '#feebc8' : '#fed7d7'}; color: ${storyRAG === 'green' ? '#2f855a' : storyRAG === 'amber' ? '#c05621' : '#c53030'};">${storyIcon}</span>
+                                        ${renderMetricChips(storyMetrics)}
+                                    </div>
+                                </div>
+                                <div class="group-summary">
+                                    <span class="summary-badge">${storyTasks.length} items</span>
+                                    <span class="summary-badge">✓ ${storyStats.completed}/${storyTasks.length}</span>
+                                    <span class="summary-badge">🛠️ ${storyStats.effortRemaining}/${storyStats.effortPlanned} pts left</span>
+                                    <span class="summary-badge">${storyStats.points} pts</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        html += `<div class="story-${pIndex}-${eIndex}-${sIndex}-children group-collapsed">`;
+                        
+                        // Check if we need Type grouping (only if multiple types exist under this story)
+                        const types = Object.keys(storyData);
+                        const hasMultipleTypes = types.length > 1 || (types.length === 1 && types[0] !== 'Story');
+                        
+                        if (hasMultipleTypes) {
+                            // Loop through each Type (Task, Bug, etc.) under this Story
+                            Object.keys(storyData).sort().forEach((type, tIndex) => {
+                                const typeItems = storyData[type];
+                                const typeStats = calculateGroupStats(typeItems);
+                                
+                                // Calculate Type RAG status (rollup from all type items)
+                                const typeRAG = rollupRAG(typeItems);
+                                const typeRAGIcon = typeRAG === 'green' ? '✓' : typeRAG === 'amber' ? '!' : '✗';
+                                const typeMetrics = rollupMetrics(typeItems);
+                                
+                                // Choose icon based on type
+                                let typeIcon = '📋';
+                                if (type === 'Bug') typeIcon = '🐛';
+                                else if (type === 'Task') typeIcon = '✓';
+                                else if (type === 'Story') typeIcon = '📖';
+                                
+                                html += `
+                                    <div class="group-level-4 collapsed" onclick="toggleGroup('type-${pIndex}-${eIndex}-${sIndex}-${tIndex}', event)">
+                                        <div class="group-header-content">
+                                            <span class="toggle-icon" style="background: ${typeRAG === 'green' ? '#48bb78' : typeRAG === 'amber' ? '#ed8936' : '#e53e3e'}; border-color: #805ad5"></span>
+                                            <div class="group-title">
+                                                <span>${typeIcon}</span>
+                                                <span>${type}</span>
+                                                <span style="margin-left: 8px; font-size: 0.75em; padding: 2px 6px; border-radius: 10px; background: ${typeRAG === 'green' ? '#c6f6d5' : typeRAG === 'amber' ? '#feebc8' : '#fed7d7'}; color: ${typeRAG === 'green' ? '#2f855a' : typeRAG === 'amber' ? '#c05621' : '#c53030'};">${typeRAGIcon}</span>
+                                                ${renderMetricChips(typeMetrics)}
+                                            </div>
+                                        </div>
+                                        <div class="group-summary">
+                                            <span class="summary-badge">${typeItems.length} items</span>
+                                            <span class="summary-badge">✓ ${typeStats.completed}/${typeItems.length}</span>
+                                            <span class="summary-badge">🛠️ ${typeStats.effortRemaining}/${typeStats.effortPlanned} pts left</span>
+                                            <span class="summary-badge">${typeStats.points} pts</span>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                html += `<div class="type-${pIndex}-${eIndex}-${sIndex}-${tIndex}-children group-collapsed">`;
+                                
+                                // Add header row for items
+                                html += `
+                                    <div class="task-details-header">
+                                        <div>Task Name</div>
+                                        <div>Status</div>
+                                        <div>Priority</div>
+                                        <div>Quality</div>
+                                        <div>Assignee</div>
+                                        <div>Points</div>
+                                        <div>Planned</div>
+                                        <div>Consumed</div>
+                                        <div>Remaining</div>
+                                        <div>Savings</div>
+                                        <div>Achieved</div>
+                                        <div>Date</div>
+                                        <div>Health (E/T/Q)</div>
+                                    </div>
+                                `;
+                                
+                                // Item detail rows
+                                typeItems.forEach(item => {
+                                    const taskRAG = computeTaskRAG(item);
+                                    html += `
+                                        <div class="task-details-row task-rag-${taskRAG}">
+                                            <div class="task-cell">${item.Task || ''}</div>
+                                            <div class="task-cell">
+                                                <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
+                                            </div>
+                                            <div class="task-cell priority-${safeLowerCase(item.Priority)}">${item.Priority}</div>
+                                            <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
+                                            <div class="task-cell">${item.Assignee}</div>
+                                            <div class="task-cell">${item['Story Points']}</div>
+                                            <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
+                                            <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
+                                            <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">
+                                                ${formatCurrency(item['Budget Remaining'])}
+                                            </div>
+                                            <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
+                                            <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
+                                            <div class="task-cell">${item.Date}</div>
+                                            <div class="task-cell task-metrics-cell">${renderMetricChips(item._metrics, 'sm')}</div>
+                                        </div>
+                                    `;
+                                });
+                                
+                                html += `</div>`; // Close type children
+                            });
+                        } else {
+                            // Only one type (Story), show items directly without Type grouping
+                            const typeItems = storyData[types[0]];
+                            
+                            // Add header row for items
+                            html += `
+                                <div class="task-details-header">
+                                    <div>Task Name</div>
+                                    <div>Status</div>
+                                    <div>Priority</div>
+                                    <div>Quality</div>
+                                    <div>Assignee</div>
+                                    <div>Points</div>
+                                    <div>Planned</div>
+                                    <div>Consumed</div>
+                                    <div>Remaining</div>
+                                    <div>Savings</div>
+                                    <div>Achieved</div>
+                                    <div>Date</div>
+                                    <div>Health (E/T/Q)</div>
+                                </div>
+                            `;
+                            
+                            // Item detail rows directly under story
+                            typeItems.forEach(item => {
+                                const taskRAG = computeTaskRAG(item);
+                                html += `
+                                    <div class="task-details-row task-rag-${taskRAG}">
+                                        <div class="task-cell">${item.Task || ''}</div>
+                                        <div class="task-cell">
+                                            <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
+                                        </div>
+                                        <div class="task-cell priority-${safeLowerCase(item.Priority)}">${item.Priority}</div>
+                                        <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
+                                        <div class="task-cell">${item.Assignee}</div>
+                                        <div class="task-cell">${item['Story Points']}</div>
+                                        <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
+                                        <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
+                                        <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">
+                                            ${formatCurrency(item['Budget Remaining'])}
+                                        </div>
+                                        <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
+                                        <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
+                                        <div class="task-cell">${item.Date}</div>
+                                        <div class="task-cell task-metrics-cell">${renderMetricChips(item._metrics, 'sm')}</div>
+                                    </div>
+                                `;
+                            });
+                        }
+                        
+                        html += `</div>`; // Close story children
+                    });
+                    
+                    html += `</div>`; // Close epic children
+                });
+                
+                html += `</div>`; // Close project children
+            });
+            
+            console.log('updateTable: Generated HTML length:', html.length);
+            console.log('updateTable: First 200 chars of HTML:', html.substring(0, 200));
+            container.innerHTML = html;
+            console.log('updateTable: container.children.length after setting innerHTML:', container.children.length);
+        }
+        
+        function calculateGroupStats(items) {
+            // Effort is measured in Story Points (not money):
+            //   planned   = total estimated effort
+            //   consumed  = effort delivered (points on Done items)
+            //   remaining = effort still outstanding (points on not-Done items)
+            const effortPlanned = items.reduce((sum, i) => sum + (i['Story Points'] || 0), 0);
+            const effortConsumed = items.reduce((sum, i) => sum + (i.Status === 'Done' ? (i['Story Points'] || 0) : 0), 0);
+            return {
+                completed: items.filter(i => i.Status === 'Done').length,
+                effortPlanned: effortPlanned,
+                effortConsumed: effortConsumed,
+                effortRemaining: effortPlanned - effortConsumed,
+                points: effortPlanned
+            };
+        }
+        
+        function toggleGroup(groupId, event) {
+            event.stopPropagation();
+            const header = event.currentTarget;
+            const childrenDiv = document.querySelector('.' + groupId + '-children');
+            
+            if (childrenDiv) {
+                header.classList.toggle('collapsed');
+                childrenDiv.classList.toggle('group-collapsed');
+            }
+        }
+        
+        let allExpanded = false;  // Start with stories collapsed (default: Projects and EPICs expanded)
+        function toggleAllGroups() {
+            const allLevel1 = document.querySelectorAll('.group-level-1');
+            const allLevel2 = document.querySelectorAll('.group-level-2');
+            const allLevel3 = document.querySelectorAll('.group-level-3');
+            const allLevel4 = document.querySelectorAll('.group-level-4');
+            const allChildren = document.querySelectorAll('[class$="-children"]');
+            const btnText = document.getElementById('toggleBtnText');
+            
+            allExpanded = !allExpanded;
+            btnText.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+            
+            [allLevel1, allLevel2, allLevel3, allLevel4].forEach(levels => {
+                levels.forEach(header => {
+                    if (allExpanded) {
+                        header.classList.remove('collapsed');
+                    } else {
+                        header.classList.add('collapsed');
+                    }
+                });
+            });
+            
+            allChildren.forEach(child => {
+                if (allExpanded) {
+                    child.classList.remove('group-collapsed');
+                } else {
+                    child.classList.add('group-collapsed');
+                }
+            });
+        }
+
+        // ===== Sprint View: same drill-down as the Detailed Task View, grouped by Sprint =====
+        function updateSprintTable() {
+            const container = document.getElementById('sprintTableContainer');
+            if (!container) return;
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No tasks found matching your filters</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const safeLowerCase = (str) => (str && typeof str === 'string' ? str.toLowerCase() : '');
+
+            // --- Three-metric model (Efforts / Timeline / Quality) ---
+            const calcEfforts = (item) => {
+                if (item['Budget Remaining'] < 0) return 'red';
+                const planned = item['Budget Planned'] || 0;
+                const consumed = item['Budget Consumed'] || 0;
+                if (planned <= 0) return 'green';
+                const ratio = consumed / planned;
+                if (ratio > 1) return 'red';
+                if (ratio >= 0.9) return 'amber';
+                return 'green';
+            };
+            const calcTimeline = (item) => {
+                if (item.Status === 'Done') return 'green';
+                const due = new Date(item.Date);
+                if (isNaN(due)) return 'amber';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const daysLeft = Math.floor((due - today) / 86400000);
+                if (daysLeft < 0) return 'red';
+                if (item.Status === 'To Do') return 'amber';
+                if (daysLeft <= 7) return 'amber';
+                return 'green';
+            };
+            const calcQuality = (item) => qualityRAG(item.Quality);
+            const calcItemMetrics = (item) => ({
+                efforts: calcEfforts(item),
+                timeline: calcTimeline(item),
+                quality: calcQuality(item)
+            });
+            const calcTaskRAG = (item) => computeTaskRAG(item);
+            const rollupRAG = (items) => {
+                const s = items.map(calcTaskRAG);
+                if (s.includes('red')) return 'red';
+                if (s.includes('amber')) return 'amber';
+                return 'green';
+            };
+            const rollupMetric = (items, key) => {
+                const vals = items.map(i => calcItemMetrics(i)[key]);
+                if (vals.includes('red')) return 'red';
+                if (vals.includes('amber')) return 'amber';
+                return 'green';
+            };
+            const rollupMetrics = (items) => ({
+                efforts: rollupMetric(items, 'efforts'),
+                timeline: rollupMetric(items, 'timeline'),
+                quality: rollupMetric(items, 'quality')
+            });
+            const renderMetricChips = (m, size) => {
+                const cls = size === 'sm' ? 'metric-chip metric-chip-sm' : 'metric-chip';
+                const one = (label, status, name) =>
+                    `<span class="${cls} ${status}" title="${name}: ${status.toUpperCase()}">${label}</span>`;
+                return '<span class="metric-chips">' +
+                    one('E', m.efforts, 'Efforts') +
+                    one('T', m.timeline, 'Timeline') +
+                    one('Q', m.quality, 'Quality') +
+                    '</span>';
+            };
+
+            const ragDot = { green: '#48bb78', amber: '#ed8936', red: '#e53e3e' };
+            const ragBg  = { green: '#c6f6d5', amber: '#feebc8', red: '#fed7d7' };
+            const ragFg  = { green: '#2f855a', amber: '#c05621', red: '#c53030' };
+            const ragIco = { green: '✓', amber: '!', red: '✗' };
+
+            const groupHeader = (level, id, icon, title, items, collapsed) => {
+                const rag = rollupRAG(items);
+                const m = rollupMetrics(items);
+                const stats = calculateGroupStats(items);
+                return `
+                    <div class="group-level-${level}${collapsed ? ' collapsed' : ''}" onclick="toggleGroup('${id}', event)">
+                        <div class="group-header-content">
+                            <span class="toggle-icon" style="background: ${ragDot[rag]}"></span>
+                            <div class="group-title">
+                                <span>${icon}</span>
+                                <span>${title}</span>
+                                <span style="margin-left: 10px; font-size: 0.8em; padding: 2px 8px; border-radius: 12px; background: ${ragBg[rag]}; color: ${ragFg[rag]};">${ragIco[rag]}</span>
+                                ${renderMetricChips(m)}
+                            </div>
+                        </div>
+                        <div class="group-summary">
+                            <span class="summary-badge">📊 ${items.length} items</span>
+                            <span class="summary-badge">✓ ${stats.completed}/${items.length}</span>
+                            <span class="summary-badge">🛠️ ${stats.effortRemaining}/${stats.effortPlanned} pts left</span>
+                            <span class="summary-badge">⭐ ${stats.points}</span>
+                        </div>
+                    </div>`;
+            };
+
+            const renderTaskRows = (items) => {
+                let h = `
+                    <div class="task-details-header">
+                        <div>Task Name</div>
+                        <div>Status</div>
+                        <div>Priority</div>
+                        <div>Quality</div>
+                        <div>Assignee</div>
+                        <div>Points</div>
+                        <div>Planned</div>
+                        <div>Consumed</div>
+                        <div>Remaining</div>
+                        <div>Savings</div>
+                        <div>Achieved</div>
+                        <div>Date</div>
+                        <div>Health (E/T/Q)</div>
+                    </div>
+                `;
+                items.forEach(item => {
+                    const taskRAG = calcTaskRAG(item);
+                    const m = item._metrics || calcItemMetrics(item);
+                    h += `
+                        <div class="task-details-row task-rag-${taskRAG}">
+                            <div class="task-cell">${item.Task || ''}</div>
+                            <div class="task-cell">
+                                <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
+                            </div>
+                            <div class="task-cell priority-${safeLowerCase(item.Priority)}">${item.Priority}</div>
+                            <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
+                            <div class="task-cell">${item.Assignee}</div>
+                            <div class="task-cell">${item['Story Points']}</div>
+                            <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
+                            <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">${formatCurrency(item['Budget Remaining'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
+                            <div class="task-cell">${item.Date}</div>
+                            <div class="task-cell task-metrics-cell">${renderMetricChips(m, 'sm')}</div>
+                        </div>
+                    `;
+                });
+                return h;
+            };
+
+            // Group: Sprint -> Project -> EPIC -> Story -> [items]
+            const grouped = {};
+            filteredData.forEach(item => {
+                const sprint = item.Sprint || 'No Sprint';
+                const project = item.Project || 'Unknown Project';
+                const epic = item.EPIC || 'Unknown Epic';
+                const story = item.Story || 'Unknown Story';
+                if (!grouped[sprint]) grouped[sprint] = {};
+                if (!grouped[sprint][project]) grouped[sprint][project] = {};
+                if (!grouped[sprint][project][epic]) grouped[sprint][project][epic] = {};
+                if (!grouped[sprint][project][epic][story]) grouped[sprint][project][epic][story] = [];
+                grouped[sprint][project][epic][story].push(item);
+            });
+
+            // Natural sort so "Sprint 2" comes before "Sprint 10"
+            const sprintSort = (a, b) => {
+                const na = parseInt((a.match(/\d+/) || [99999])[0], 10);
+                const nb = parseInt((b.match(/\d+/) || [99999])[0], 10);
+                return na - nb || a.localeCompare(b);
+            };
+
+            let html = '';
+            Object.keys(grouped).sort(sprintSort).forEach((sprint, si) => {
+                const sprintProjects = grouped[sprint];
+                const sprintItems = Object.values(sprintProjects).flatMap(pr =>
+                    Object.values(pr).flatMap(ep => Object.values(ep).flat()));
+                const sprintId = `sp-${si}`;
+                html += groupHeader(1, sprintId, '🏃', sprint, sprintItems, true);
+                html += `<div class="${sprintId}-children group-collapsed">`;
+
+                Object.keys(sprintProjects).sort().forEach((project, pi) => {
+                    const projEpics = sprintProjects[project];
+                    const projItems = Object.values(projEpics).flatMap(ep => Object.values(ep).flat());
+                    const projId = `${sprintId}-${pi}`;
+                    html += groupHeader(2, projId, '📁', project, projItems, true);
+                    html += `<div class="${projId}-children group-collapsed">`;
+
+                    Object.keys(projEpics).sort().forEach((epic, ei) => {
+                        const epicStories = projEpics[epic];
+                        const epicItems = Object.values(epicStories).flat();
+                        const epicId = `${projId}-${ei}`;
+                        html += groupHeader(3, epicId, '🎯', epic, epicItems, true);
+                        html += `<div class="${epicId}-children group-collapsed">`;
+
+                        Object.keys(epicStories).sort().forEach((story, sti) => {
+                            const storyItems = epicStories[story];
+                            const storyId = `${epicId}-${sti}`;
+                            html += groupHeader(4, storyId, '📝', story, storyItems, true);
+                            html += `<div class="${storyId}-children group-collapsed">`;
+                            html += renderTaskRows(storyItems);
+                            html += `</div>`;
+                        });
+
+                        html += `</div>`; // epic children
+                    });
+
+                    html += `</div>`; // project children
+                });
+
+                html += `</div>`; // sprint children
+            });
+
+            container.innerHTML = html;
+        }
+
+        let sprintAllExpanded = false;
+        function toggleAllSprintGroups() {
+            const container = document.getElementById('sprintTableContainer');
+            if (!container) return;
+
+            sprintAllExpanded = !sprintAllExpanded;
+            const btnText = document.getElementById('sprintToggleBtnText');
+            if (btnText) btnText.textContent = sprintAllExpanded ? 'Collapse All' : 'Expand All';
+
+            container.querySelectorAll('.group-level-1, .group-level-2, .group-level-3, .group-level-4')
+                .forEach(header => header.classList.toggle('collapsed', !sprintAllExpanded));
+
+            container.querySelectorAll('[class$="-children"]')
+                .forEach(child => child.classList.toggle('group-collapsed', !sprintAllExpanded));
+        }
+
+        // Format numbers with K for thousands
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace('.0', '') + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace('.0', '') + 'K';
+            }
+            return num.toString();
+        }
+
+        // Format currency with K for thousands
+        function formatCurrency(num) {
+            if (num >= 1000000) {
+                return '$' + (num / 1000000).toFixed(1).replace('.0', '') + 'M';
+            }
+            if (num >= 1000) {
+                return '$' + (num / 1000).toFixed(1).replace('.0', '') + 'K';
+            }
+            return '$' + num.toString();
+        }
+
+        function sortTable(column) {
+            const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+            sortDirection[column] = direction;
+
+            filteredData.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            updateTable();
+        }
+    </script>
+</body>
+</html>
