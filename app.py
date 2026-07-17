@@ -12,6 +12,7 @@ import os
 import re
 import traceback
 import logging
+from io import BytesIO
 
 import pandas as pd
 from flask import (
@@ -40,30 +41,14 @@ except ImportError as e:
 # Configuration
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 ALLOWED_EXTENSIONS = {"xlsx", "xls"}
 
 app = Flask(__name__)
 app.secret_key = "jira-dashboard-secret-key-change-me"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 
-TEMPLATE_PATH = os.path.join(BASE_DIR, "JIRA_template.xlsx")
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Pre-generate the template if it doesn't exist yet
-if not os.path.exists(TEMPLATE_PATH):
-    try:
-        if build_template:
-            build_template(TEMPLATE_PATH)
-            logger.info(f"Template created at {TEMPLATE_PATH}")
-        else:
-            logger.warning("build_template function not available, template will be created on-demand")
-    except Exception as e:
-        logger.error(f"Failed to create template: {e}")
-        pass  # non-fatal; download route will surface the error
+# Note: In serverless environment, we process everything in memory
+# No file uploads to disk are performed
 
 # ---------------------------------------------------------------------------
 # HTML template (inline – no separate templates folder needed)
@@ -532,11 +517,13 @@ PAGE_TEMPLATE = """
 # Core processing helpers
 # ---------------------------------------------------------------------------
 
-def excel_to_json(excel_path: str, json_path: str) -> int:
-    """Replicates generate_dashboard_data.py logic."""
+def excel_to_json_memory(file_stream) -> tuple[dict, int]:
+    """Process Excel file in memory without saving to disk."""
     try:
-        logger.debug(f"Reading Excel file: {excel_path}")
-        df = pd.read_excel(excel_path)
+        logger.debug("Processing Excel file in memory")
+        
+        # Read Excel directly from the file stream
+        df = pd.read_excel(file_stream)
         logger.debug(f"Excel file loaded with {len(df)} rows and columns: {list(df.columns)}")
         
         df = df.drop(columns=["Cost"], errors="ignore")
@@ -546,56 +533,57 @@ def excel_to_json(excel_path: str, json_path: str) -> int:
             df["Date"] = pd.to_datetime(df["Date"], errors='coerce').dt.strftime("%Y-%m-%d")
         
         data = df.to_dict(orient="records")
-        logger.debug(f"Converting {len(data)} records to JSON")
+        logger.info(f"Successfully processed {len(data)} records in memory")
         
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-        
-        logger.info(f"Successfully converted {len(data)} records to {json_path}")
-        return len(data)
+        return data, len(data)
     except Exception as e:
-        logger.error(f"Error in excel_to_json: {str(e)}")
+        logger.error(f"Error in excel_to_json_memory: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
 
 
-def build_standalone(json_path: str, template_path: str, output_path: str) -> int:
-    """Replicates create_standalone_dashboard.py logic."""
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+def build_standalone_memory(data: list, template_content: str) -> str:
+    """Build standalone dashboard in memory without file I/O."""
+    try:
+        logger.debug("Building standalone dashboard in memory")
 
-    with open(template_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    loader_pattern = re.compile(
-        r"        // Load data from jira_data\.json\s*\n"
-        r"        fetch\('jira_data\.json'\).*?"
-        r"\}\);",
-        re.DOTALL,
-    )
-
-    embedded_code = (
-        "        // Load data (embedded)\n"
-        "        allData = " + json.dumps(data) + ";\n"
-        "                initializeDashboard();"
-    )
-
-    new_html, count = loader_pattern.subn(embedded_code, html_content)
-    if count != 1:
-        raise ValueError(
-            f"Expected exactly 1 fetch loader in dashboard.html, found {count}."
+        loader_pattern = re.compile(
+            r"        // Load data from jira_data\.json\s*\n"
+            r"        fetch\('jira_data\.json'\).*?"
+            r"\}\);",
+            re.DOTALL,
         )
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(new_html)
+        embedded_code = (
+            "        // Load data (embedded)\n"
+            "        allData = " + json.dumps(data) + ";\n"
+            "                initializeDashboard();"
+        )
 
-    return len(data)
+        new_html, count = loader_pattern.subn(embedded_code, template_content)
+        if count != 1:
+            raise ValueError(
+                f"Expected exactly 1 fetch loader in dashboard.html, found {count}."
+            )
+
+        logger.info(f"Successfully built standalone dashboard with {len(data)} records")
+        return new_html
+    except Exception as e:
+        logger.error(f"Error in build_standalone_memory: {str(e)}")
+        raise
 
 
 # ---------------------------------------------------------------------------
 # Session-like state stored in app context (fine for single-user local tool)
+# For serverless deployment, we store everything in memory
 # ---------------------------------------------------------------------------
-_state: dict = {"step": 1, "record_count": 0, "messages": []}
+_state: dict = {
+    "step": 1, 
+    "record_count": 0, 
+    "messages": [], 
+    "json_data": None, 
+    "standalone_html": None
+}
 
 
 def _render(step=None, messages=None, **kwargs):
@@ -626,8 +614,13 @@ def _render(step=None, messages=None, **kwargs):
 @app.route("/", methods=["GET"])
 def index():
     try:
+        # Reset state for new session
         _state["step"] = 1
         _state["messages"] = []
+        _state["json_data"] = None
+        _state["standalone_html"] = None
+        _state["record_count"] = 0
+        
         return _render(step=1, messages=[])
     except Exception as e:
         logger.error(f"Error in index route: {str(e)}")
@@ -643,13 +636,18 @@ def health_check():
         
         health_info = {
             "status": "healthy",
-            "upload_folder_exists": os.path.exists(UPLOAD_FOLDER),
-            "template_exists": os.path.exists(TEMPLATE_PATH),
+            "mode": "serverless_memory",
             "dashboard_template_exists": os.path.exists(os.path.join(BASE_DIR, "dashboard.html")),
             "base_dir": BASE_DIR,
             "pandas_version": pd.__version__,
             "openpyxl_available": True,
-            "create_template_available": build_template is not None
+            "create_template_available": build_template is not None,
+            "current_state": {
+                "step": _state.get("step", 1),
+                "has_data": _state.get("json_data") is not None,
+                "has_html": _state.get("standalone_html") is not None,
+                "record_count": _state.get("record_count", 0)
+            }
         }
         
         # Test if we can create a simple DataFrame
@@ -679,24 +677,21 @@ def upload():
             logger.warning(f"Invalid file extension: {ext}")
             return _render(step=1, messages=[("danger", "Only .xlsx and .xls files are supported.")])
 
-        filename = secure_filename(file.filename)
-        excel_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        logger.debug("Processing file in memory (serverless environment)")
         
-        logger.debug(f"Saving file to: {excel_path}")
-        file.save(excel_path)
-
-        json_path = os.path.join(BASE_DIR, "jira_data.json")
-        logger.debug(f"Converting to JSON: {json_path}")
-
         try:
-            count = excel_to_json(excel_path, json_path)
-            logger.info(f"Successfully processed {count} records")
+            # Process Excel file in memory
+            data, count = excel_to_json_memory(file)
+            
+            # Store data in memory instead of file
+            _state["json_data"] = data
+            _state["record_count"] = count
+            
+            logger.info(f"Successfully processed {count} records in memory")
         except Exception as e:
-            err = traceback.format_exc()
-            logger.error(f"Conversion failed: {err}")
+            logger.error(f"Conversion failed: {str(e)}")
             return _render(step=1, messages=[("danger", f"Conversion failed: {str(e)}")])
 
-        _state["record_count"] = count
         return _render(step=2, messages=[])
         
     except Exception as e:
@@ -707,58 +702,114 @@ def upload():
 
 @app.route("/generate", methods=["POST"])
 def generate():
-    json_path     = os.path.join(BASE_DIR, "jira_data.json")
-    template_path = os.path.join(BASE_DIR, "dashboard.html")
-    output_path   = os.path.join(BASE_DIR, "dashboard_standalone.html")
-
-    if not os.path.exists(json_path):
-        return _render(step=1, messages=[("danger", "jira_data.json not found. Please upload an Excel file first.")])
-    if not os.path.exists(template_path):
-        return _render(step=2, messages=[("danger", "dashboard.html template not found in project directory.")])
-
     try:
-        build_standalone(json_path, template_path, output_path)
-    except Exception:
-        err = traceback.format_exc()
-        return _render(step=2, messages=[("danger", f"Dashboard generation failed:\n{err}")])
+        if not _state.get("json_data"):
+            return _render(step=1, messages=[("danger", "No data found. Please upload an Excel file first.")])
+        
+        # Read dashboard template
+        template_path = os.path.join(BASE_DIR, "dashboard.html")
+        if not os.path.exists(template_path):
+            return _render(step=2, messages=[("danger", "dashboard.html template not found in project directory.")])
 
-    return _render(step=3, messages=[])
+        with open(template_path, "r", encoding="utf-8") as f:
+            template_content = f.read()
+
+        try:
+            standalone_html = build_standalone_memory(_state["json_data"], template_content)
+            _state["standalone_html"] = standalone_html
+            logger.info("Successfully generated standalone dashboard in memory")
+        except Exception as e:
+            logger.error(f"Dashboard generation failed: {str(e)}")
+            return _render(step=2, messages=[("danger", f"Dashboard generation failed: {str(e)}")])
+
+        return _render(step=3, messages=[])
+    except Exception as e:
+        logger.error(f"Error in generate route: {str(e)}")
+        return _render(step=2, messages=[("danger", f"Generation failed: {str(e)}")])
 
 
 @app.route("/download")
 def download():
-    output_path = os.path.join(BASE_DIR, "dashboard_standalone.html")
-    if not os.path.exists(output_path):
-        return redirect(url_for("index"))
-    return send_file(output_path, as_attachment=True, download_name="dashboard_standalone.html")
+    try:
+        if not _state.get("standalone_html"):
+            return redirect(url_for("index"))
+        
+        # Return the HTML content as a downloadable file
+        return Response(
+            _state["standalone_html"],
+            mimetype="text/html",
+            headers={"Content-Disposition": "attachment; filename=dashboard_standalone.html"}
+        )
+    except Exception as e:
+        logger.error(f"Error in download route: {str(e)}")
+        return Response(f"Download failed: {str(e)}", status=500)
 
 
 @app.route("/preview")
 def preview():
-    output_path = os.path.join(BASE_DIR, "dashboard_standalone.html")
-    if not os.path.exists(output_path):
-        return redirect(url_for("index"))
-    with open(output_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    return Response(content, mimetype="text/html")
+    try:
+        if not _state.get("standalone_html"):
+            return redirect(url_for("index"))
+        
+        return Response(_state["standalone_html"], mimetype="text/html")
+    except Exception as e:
+        logger.error(f"Error in preview route: {str(e)}")
+        return Response(f"Preview failed: {str(e)}", status=500)
 
 
 @app.route("/template")
 def download_template():
     try:
-        if not os.path.exists(TEMPLATE_PATH):
-            if build_template:
-                try:
-                    build_template(TEMPLATE_PATH)
-                    logger.info(f"Template generated on-demand at {TEMPLATE_PATH}")
-                except Exception as e:
-                    logger.error(f"Failed to generate template: {e}")
-                    err = traceback.format_exc()
-                    return Response(f"Could not generate template: {str(e)}\n\nDetails:\n{err}", status=500, mimetype="text/plain")
-            else:
-                return Response("Template generation not available: create_template module not imported", status=500, mimetype="text/plain")
-        
-        return send_file(TEMPLATE_PATH, as_attachment=True, download_name="JIRA_template.xlsx")
+        # Generate template in memory
+        if build_template:
+            try:
+                # Create a temporary in-memory Excel file
+                from io import BytesIO
+                import openpyxl
+                
+                # Create workbook in memory
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                ws.title = "JIRA Data"
+                
+                # Add sample headers (simplified version)
+                headers = [
+                    "Type", "Project", "Sprint", "EPIC", "Story", "Task",
+                    "Quality", "Budget Planned", "Budget Consumed", "Budget Remaining",
+                    "Saving Planned", "Saving Achived", "Saving Pending",
+                    "Date", "Story Points", "Priority", "Assignee", "Status", "Dependencies"
+                ]
+                
+                for col_idx, header in enumerate(headers, 1):
+                    ws.cell(row=1, column=col_idx, value=header)
+                
+                # Add one sample row
+                sample_row = [
+                    "Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
+                    "Frontend implementation", 0, 3000, 1800, 1200, 400, 200, 200,
+                    "2026-01-10", 3, "High", "Alice", "Done", ""
+                ]
+                
+                for col_idx, value in enumerate(sample_row, 1):
+                    ws.cell(row=2, column=col_idx, value=value)
+                
+                # Save to BytesIO
+                excel_buffer = BytesIO()
+                wb.save(excel_buffer)
+                excel_buffer.seek(0)
+                
+                return Response(
+                    excel_buffer.getvalue(),
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment; filename=JIRA_template.xlsx"}
+                )
+                
+            except Exception as e:
+                logger.error(f"Failed to generate template in memory: {e}")
+                return Response(f"Could not generate template: {str(e)}", status=500, mimetype="text/plain")
+        else:
+            return Response("Template generation not available", status=500, mimetype="text/plain")
+            
     except Exception as e:
         logger.error(f"Error in template download: {str(e)}")
         return Response(f"Template download failed: {str(e)}", status=500, mimetype="text/plain")
