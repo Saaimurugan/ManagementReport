@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "app.py",
@@ -11,13 +10,5 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
-  ],
-  "env": {
-    "FLASK_ENV": "production"
-  },
-  "functions": {
-    "app.py": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
