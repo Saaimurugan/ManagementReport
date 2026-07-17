@@ -1,4 +1,4 @@
-# Technology Leadership Dashboard
+# Technology Leadership Dashboard 
 
 A self-contained, single-file HTML dashboard for monitoring JIRA-style project delivery across projects, epics, stories, sprints, and tasks. It turns a flat export of work items into an executive-friendly view with health indicators, drill-down tables, and charts — no web server, database, or build tooling required.
 
