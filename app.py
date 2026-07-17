@@ -11,6 +11,7 @@ import json
 import os
 import re
 import traceback
+import logging
 
 import pandas as pd
 from flask import (
@@ -24,7 +25,16 @@ from flask import (
     url_for,
 )
 from werkzeug.utils import secure_filename
-from create_template import build_template
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+try:
+    from create_template import build_template
+except ImportError as e:
+    logger.error(f"Failed to import create_template: {e}")
+    build_template = None
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -46,8 +56,13 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Pre-generate the template if it doesn't exist yet
 if not os.path.exists(TEMPLATE_PATH):
     try:
-        build_template(TEMPLATE_PATH)
-    except Exception:
+        if build_template:
+            build_template(TEMPLATE_PATH)
+            logger.info(f"Template created at {TEMPLATE_PATH}")
+        else:
+            logger.warning("build_template function not available, template will be created on-demand")
+    except Exception as e:
+        logger.error(f"Failed to create template: {e}")
         pass  # non-fatal; download route will surface the error
 
 # ---------------------------------------------------------------------------
@@ -519,13 +534,29 @@ PAGE_TEMPLATE = """
 
 def excel_to_json(excel_path: str, json_path: str) -> int:
     """Replicates generate_dashboard_data.py logic."""
-    df = pd.read_excel(excel_path)
-    df = df.drop(columns=["Cost"], errors="ignore")
-    df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
-    data = df.to_dict(orient="records")
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    return len(data)
+    try:
+        logger.debug(f"Reading Excel file: {excel_path}")
+        df = pd.read_excel(excel_path)
+        logger.debug(f"Excel file loaded with {len(df)} rows and columns: {list(df.columns)}")
+        
+        df = df.drop(columns=["Cost"], errors="ignore")
+        
+        # Handle date conversion more safely
+        if "Date" in df.columns:
+            df["Date"] = pd.to_datetime(df["Date"], errors='coerce').dt.strftime("%Y-%m-%d")
+        
+        data = df.to_dict(orient="records")
+        logger.debug(f"Converting {len(data)} records to JSON")
+        
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        
+        logger.info(f"Successfully converted {len(data)} records to {json_path}")
+        return len(data)
+    except Exception as e:
+        logger.error(f"Error in excel_to_json: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
 
 def build_standalone(json_path: str, template_path: str, output_path: str) -> int:
@@ -568,17 +599,24 @@ _state: dict = {"step": 1, "record_count": 0, "messages": []}
 
 
 def _render(step=None, messages=None, **kwargs):
-    if step is not None:
-        _state["step"] = step
-    if messages is not None:
-        _state["messages"] = messages
-    return render_template_string(
-        PAGE_TEMPLATE,
-        step=_state["step"],
-        record_count=_state.get("record_count", 0),
-        messages=_state.get("messages", []),
-        **kwargs,
-    )
+    try:
+        if step is not None:
+            _state["step"] = step
+        if messages is not None:
+            _state["messages"] = messages
+        
+        context = {
+            "step": _state.get("step", 1),
+            "record_count": _state.get("record_count", 0),
+            "messages": _state.get("messages", []),
+            **kwargs
+        }
+        
+        return render_template_string(PAGE_TEMPLATE, **context)
+    except Exception as e:
+        logger.error(f"Error in _render: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return f"Template rendering error: {str(e)}", 500
 
 
 # ---------------------------------------------------------------------------
@@ -587,35 +625,84 @@ def _render(step=None, messages=None, **kwargs):
 
 @app.route("/", methods=["GET"])
 def index():
-    _state["step"] = 1
-    _state["messages"] = []
-    return _render(step=1, messages=[])
+    try:
+        _state["step"] = 1
+        _state["messages"] = []
+        return _render(step=1, messages=[])
+    except Exception as e:
+        logger.error(f"Error in index route: {str(e)}")
+        return f"Application error: {str(e)}", 500
+
+
+@app.route("/health")
+def health_check():
+    """Simple health check endpoint"""
+    try:
+        import pandas as pd
+        import openpyxl
+        
+        health_info = {
+            "status": "healthy",
+            "upload_folder_exists": os.path.exists(UPLOAD_FOLDER),
+            "template_exists": os.path.exists(TEMPLATE_PATH),
+            "dashboard_template_exists": os.path.exists(os.path.join(BASE_DIR, "dashboard.html")),
+            "base_dir": BASE_DIR,
+            "pandas_version": pd.__version__,
+            "openpyxl_available": True,
+            "create_template_available": build_template is not None
+        }
+        
+        # Test if we can create a simple DataFrame
+        test_df = pd.DataFrame({"test": [1, 2, 3]})
+        health_info["pandas_working"] = len(test_df) == 3
+        
+        return health_info
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {"status": "unhealthy", "error": str(e)}, 500
 
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    file = request.files.get("excel_file")
-    if not file or file.filename == "":
-        return _render(step=1, messages=[("danger", "No file selected.")])
-
-    ext = file.filename.rsplit(".", 1)[-1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        return _render(step=1, messages=[("danger", "Only .xlsx and .xls files are supported.")])
-
-    filename = secure_filename(file.filename)
-    excel_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(excel_path)
-
-    json_path = os.path.join(BASE_DIR, "jira_data.json")
-
     try:
-        count = excel_to_json(excel_path, json_path)
-    except Exception:
-        err = traceback.format_exc()
-        return _render(step=1, messages=[("danger", f"Conversion failed:\n{err}")])
+        logger.debug("Upload route called")
+        
+        file = request.files.get("excel_file")
+        if not file or file.filename == "":
+            logger.warning("No file selected")
+            return _render(step=1, messages=[("danger", "No file selected.")])
 
-    _state["record_count"] = count
-    return _render(step=2, messages=[])
+        logger.debug(f"File uploaded: {file.filename}")
+        
+        ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+        if ext not in ALLOWED_EXTENSIONS:
+            logger.warning(f"Invalid file extension: {ext}")
+            return _render(step=1, messages=[("danger", "Only .xlsx and .xls files are supported.")])
+
+        filename = secure_filename(file.filename)
+        excel_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        
+        logger.debug(f"Saving file to: {excel_path}")
+        file.save(excel_path)
+
+        json_path = os.path.join(BASE_DIR, "jira_data.json")
+        logger.debug(f"Converting to JSON: {json_path}")
+
+        try:
+            count = excel_to_json(excel_path, json_path)
+            logger.info(f"Successfully processed {count} records")
+        except Exception as e:
+            err = traceback.format_exc()
+            logger.error(f"Conversion failed: {err}")
+            return _render(step=1, messages=[("danger", f"Conversion failed: {str(e)}")])
+
+        _state["record_count"] = count
+        return _render(step=2, messages=[])
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in upload route: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return _render(step=1, messages=[("danger", f"Upload failed: {str(e)}")])
 
 
 @app.route("/generate", methods=["POST"])
@@ -658,18 +745,40 @@ def preview():
 
 @app.route("/template")
 def download_template():
-    if not os.path.exists(TEMPLATE_PATH):
-        try:
-            build_template(TEMPLATE_PATH)
-        except Exception:
-            err = traceback.format_exc()
-            return Response(f"Could not generate template:\n{err}", status=500, mimetype="text/plain")
-    return send_file(TEMPLATE_PATH, as_attachment=True, download_name="JIRA_template.xlsx")
+    try:
+        if not os.path.exists(TEMPLATE_PATH):
+            if build_template:
+                try:
+                    build_template(TEMPLATE_PATH)
+                    logger.info(f"Template generated on-demand at {TEMPLATE_PATH}")
+                except Exception as e:
+                    logger.error(f"Failed to generate template: {e}")
+                    err = traceback.format_exc()
+                    return Response(f"Could not generate template: {str(e)}\n\nDetails:\n{err}", status=500, mimetype="text/plain")
+            else:
+                return Response("Template generation not available: create_template module not imported", status=500, mimetype="text/plain")
+        
+        return send_file(TEMPLATE_PATH, as_attachment=True, download_name="JIRA_template.xlsx")
+    except Exception as e:
+        logger.error(f"Error in template download: {str(e)}")
+        return Response(f"Template download failed: {str(e)}", status=500, mimetype="text/plain")
 
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Internal server error: {error}")
+    return "Internal server error occurred. Please check the logs for details.", 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.error(f"Unhandled exception: {str(e)}")
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    return f"An error occurred: {str(e)}", 500
+
 if __name__ == "__main__":
     print("Starting JIRA Dashboard Generator at http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
