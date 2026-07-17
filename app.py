@@ -233,10 +233,13 @@ PAGE_TEMPLATE = """
       border-radius: 8px; padding: .85rem 1rem;
       margin-bottom: 1.25rem; font-size: .875rem;
       display: flex; align-items: flex-start; gap: .6rem;
+      white-space: pre-line; /* Allow line breaks in error messages */
+      line-height: 1.4;
     }
     .alert-danger  { background: #2d1517; border: 1px solid #6e2428; color: #ff7b72; }
     .alert-success { background: #0d2d1a; border: 1px solid #1a4731; color: #3fb950; }
     .alert-info    { background: #0c1929; border: 1px solid #1b3152; color: #79c0ff; }
+    .alert span:first-child { flex-shrink: 0; margin-top: 2px; } /* Icon positioning */
 
     /* ── Stats row (step 2) ──────────────────────────────────────────── */
     .stat-card {
@@ -517,6 +520,154 @@ PAGE_TEMPLATE = """
 # Core processing helpers
 # ---------------------------------------------------------------------------
 
+def validate_excel_format(df) -> tuple[bool, list]:
+    """
+    Validate Excel file format and return validation status and error messages.
+    
+    Returns:
+        tuple: (is_valid, list_of_error_messages)
+    """
+    errors = []
+    
+    # Define expected columns and their types
+    expected_columns = {
+        "Type": "string",
+        "Project": "string", 
+        "Sprint": "string",
+        "EPIC": "string",
+        "Story": "string",
+        "Task": "string",
+        "Quality": "numeric",
+        "Budget Planned": "numeric",
+        "Budget Consumed": "numeric", 
+        "Budget Remaining": "numeric",
+        "Saving Planned": "numeric",
+        "Saving Achived": "numeric",  # Note: keeping original spelling from data
+        "Saving Pending": "numeric",
+        "Date": "date",
+        "Story Points": "numeric",
+        "Priority": "string",
+        "Assignee": "string", 
+        "Status": "string",
+        "Dependencies": "string"
+    }
+    
+    # Check if file is empty
+    if df.empty:
+        errors.append("The Excel file is empty. Please provide a file with data.")
+        return False, errors
+    
+    # Check for required columns
+    missing_columns = []
+    for col in expected_columns.keys():
+        if col not in df.columns:
+            missing_columns.append(col)
+    
+    if missing_columns:
+        errors.append(f"Missing required columns: {', '.join(missing_columns)}")
+    
+    # Check for extra unexpected columns (warn but don't fail)
+    extra_columns = [col for col in df.columns if col not in expected_columns and col != "Cost"]
+    if extra_columns:
+        errors.append(f"Warning: Unexpected columns found (will be ignored): {', '.join(extra_columns)}")
+    
+    # Validate data types for existing columns
+    for col, expected_type in expected_columns.items():
+        if col not in df.columns:
+            continue
+            
+        # Get non-null values for validation
+        non_null_values = df[col].dropna()
+        if len(non_null_values) == 0:
+            continue  # Skip validation if all values are null
+            
+        try:
+            if expected_type == "numeric":
+                # Check if values can be converted to numeric
+                pd.to_numeric(non_null_values, errors='raise')
+                
+            elif expected_type == "date":
+                # Check if values can be converted to datetime
+                pd.to_datetime(non_null_values, errors='raise')
+                
+            elif expected_type == "string":
+                # For string columns, check for reasonable length
+                max_length = non_null_values.astype(str).str.len().max()
+                if max_length > 500:
+                    errors.append(f"Column '{col}' contains values that are too long (max: {max_length} chars). Please keep text under 500 characters.")
+                    
+        except (ValueError, TypeError) as e:
+            errors.append(f"Column '{col}' contains invalid {expected_type} values. Please check the data format.")
+    
+    # Validate specific business rules
+    
+    # Check Priority values
+    if "Priority" in df.columns:
+        valid_priorities = ["Low", "Medium", "High", "Critical"]
+        invalid_priorities = df[df["Priority"].notna()]["Priority"].unique()
+        invalid_priorities = [p for p in invalid_priorities if str(p).strip() not in valid_priorities]
+        if invalid_priorities:
+            errors.append(f"Invalid Priority values found: {invalid_priorities}. Valid values are: {valid_priorities}")
+    
+    # Check Status values
+    if "Status" in df.columns:
+        valid_statuses = ["To Do", "In Progress", "Done", "Blocked", "Review"]
+        invalid_statuses = df[df["Status"].notna()]["Status"].unique()
+        invalid_statuses = [s for s in invalid_statuses if str(s).strip() not in valid_statuses]
+        if invalid_statuses:
+            errors.append(f"Invalid Status values found: {invalid_statuses}. Valid values are: {valid_statuses}")
+    
+    # Check Type values
+    if "Type" in df.columns:
+        valid_types = ["Epic", "Story", "Task", "Bug", "Subtask"]
+        invalid_types = df[df["Type"].notna()]["Type"].unique() 
+        invalid_types = [t for t in invalid_types if str(t).strip() not in valid_types]
+        if invalid_types:
+            errors.append(f"Invalid Type values found: {invalid_types}. Valid values are: {valid_types}")
+    
+    # Check for negative budget values
+    budget_columns = ["Budget Planned", "Budget Consumed", "Budget Remaining", "Saving Planned", "Saving Achived", "Saving Pending"]
+    for col in budget_columns:
+        if col in df.columns:
+            negative_values = df[df[col] < 0][col].notna()
+            if len(negative_values) > 0:
+                errors.append(f"Column '{col}' contains negative values, which may not be valid for budget data.")
+    
+    # Check Story Points are positive integers
+    if "Story Points" in df.columns:
+        story_points = df["Story Points"].dropna()
+        if len(story_points) > 0:
+            try:
+                # Check if they're integers and positive
+                int_values = story_points.astype(int)
+                if (int_values < 0).any():
+                    errors.append("Story Points cannot be negative.")
+                if (story_points != int_values).any():
+                    errors.append("Story Points should be whole numbers (integers).")
+            except (ValueError, TypeError):
+                errors.append("Story Points must be numeric values.")
+    
+    # Check date format
+    if "Date" in df.columns:
+        date_col = df["Date"].dropna()
+        if len(date_col) > 0:
+            try:
+                converted_dates = pd.to_datetime(date_col, errors='raise')
+                # Check for future dates beyond reasonable project timeline (2 years from now)
+                import datetime
+                max_date = datetime.datetime.now() + datetime.timedelta(days=730)
+                if (converted_dates > max_date).any():
+                    errors.append("Some dates are too far in the future (more than 2 years). Please verify the dates.")
+            except:
+                errors.append("Date column contains invalid date formats. Please use a standard date format (YYYY-MM-DD, MM/DD/YYYY, etc.).")
+    
+    # Summary validation
+    if not missing_columns and len([e for e in errors if not e.startswith("Warning:")]) == 0:
+        return True, errors  # Valid with possible warnings
+    else:
+        return False, errors
+
+
 def excel_to_json_memory(file_stream) -> tuple[dict, int]:
     """Process Excel file in memory without saving to disk."""
     try:
@@ -525,6 +676,20 @@ def excel_to_json_memory(file_stream) -> tuple[dict, int]:
         # Read Excel directly from the file stream
         df = pd.read_excel(file_stream)
         logger.debug(f"Excel file loaded with {len(df)} rows and columns: {list(df.columns)}")
+        
+        # Validate Excel format
+        is_valid, validation_errors = validate_excel_format(df)
+        
+        if not is_valid:
+            error_msg = "Excel file validation failed:\n" + "\n".join(validation_errors)
+            logger.error(f"Validation failed: {error_msg}")
+            raise ValueError(error_msg)
+        
+        # Log warnings if any
+        warnings = [e for e in validation_errors if e.startswith("Warning:")]
+        if warnings:
+            for warning in warnings:
+                logger.warning(warning)
         
         df = df.drop(columns=["Cost"], errors="ignore")
         
@@ -688,11 +853,33 @@ def upload():
             _state["record_count"] = count
             
             logger.info(f"Successfully processed {count} records in memory")
+            
+            # Show success message with any warnings
+            messages = [("success", f"Successfully uploaded and processed {count} records.")]
+            
+        except ValueError as ve:
+            # This is a validation error - show detailed message to user
+            error_msg = str(ve)
+            if "Excel file validation failed:" in error_msg:
+                # Format validation errors nicely for display
+                validation_errors = error_msg.replace("Excel file validation failed:\n", "").split("\n")
+                formatted_errors = []
+                for i, error in enumerate(validation_errors, 1):
+                    if error.strip():
+                        formatted_errors.append(f"{i}. {error.strip()}")
+                
+                error_display = "The Excel file has the following issues:\n" + "\n".join(formatted_errors)
+                error_display += "\n\nPlease fix these issues and try uploading again. You can download a sample template to see the expected format."
+                
+                return _render(step=1, messages=[("danger", error_display)])
+            else:
+                return _render(step=1, messages=[("danger", f"File validation failed: {error_msg}")])
+                
         except Exception as e:
             logger.error(f"Conversion failed: {str(e)}")
-            return _render(step=1, messages=[("danger", f"Conversion failed: {str(e)}")])
+            return _render(step=1, messages=[("danger", f"File processing failed: {str(e)}. Please ensure your Excel file is not corrupted and follows the expected format.")])
 
-        return _render(step=2, messages=[])
+        return _render(step=2, messages=messages)
         
     except Exception as e:
         logger.error(f"Unexpected error in upload route: {str(e)}")
@@ -763,16 +950,26 @@ def download_template():
         # Generate template in memory
         if build_template:
             try:
-                # Create a temporary in-memory Excel file
+                # Create a temporary in-memory Excel file using the comprehensive template
                 from io import BytesIO
                 import openpyxl
+                from openpyxl.styles import (
+                    Alignment,
+                    Border,
+                    Font,
+                    PatternFill,
+                    Side,
+                )
+                from openpyxl.utils import get_column_letter
+                from openpyxl.worksheet.datavalidation import DataValidation
+                from datetime import date
                 
                 # Create workbook in memory
                 wb = openpyxl.Workbook()
                 ws = wb.active
                 ws.title = "JIRA Data"
                 
-                # Add sample headers (simplified version)
+                # Define comprehensive headers matching the expected format
                 headers = [
                     "Type", "Project", "Sprint", "EPIC", "Story", "Task",
                     "Quality", "Budget Planned", "Budget Consumed", "Budget Remaining",
@@ -780,18 +977,149 @@ def download_template():
                     "Date", "Story Points", "Priority", "Assignee", "Status", "Dependencies"
                 ]
                 
-                for col_idx, header in enumerate(headers, 1):
-                    ws.cell(row=1, column=col_idx, value=header)
-                
-                # Add one sample row
-                sample_row = [
-                    "Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
-                    "Frontend implementation", 0, 3000, 1800, 1200, 400, 200, 200,
-                    "2026-01-10", 3, "High", "Alice", "Done", ""
+                # Sample realistic data
+                sample_rows = [
+                    ("Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO", 
+                     "Frontend implementation", 0, 3000, 1800, 1200, 400, 200, 200, 
+                     date(2026, 1, 10), 3, "High", "Alice", "Done", ""),
+                    ("Task", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
+                     "Unit tests", 1, 1200, 900, 300, 150, 90, 60,
+                     date(2026, 1, 14), 2, "High", "Bob", "Done", ""),
+                    ("Story", "Beta", "Sprint 2", "Reporting", "Management dashboard",
+                     "Data model", 0, 5000, 3000, 2000, 600, 300, 300,
+                     date(2026, 2, 11), 8, "Medium", "Eve", "In Progress", ""),
                 ]
                 
-                for col_idx, value in enumerate(sample_row, 1):
-                    ws.cell(row=2, column=col_idx, value=value)
+                # Styles
+                header_fill = PatternFill("solid", fgColor="1F6FEB")
+                header_font = Font(bold=True, color="FFFFFF", size=11)
+                header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                
+                thin = Side(style="thin", color="D0D7DE")
+                border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                
+                # Add headers
+                ws.row_dimensions[1].height = 32
+                for col_idx, header in enumerate(headers, 1):
+                    cell = ws.cell(row=1, column=col_idx, value=header)
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = header_align
+                    cell.border = border
+                
+                # Add sample data
+                for row_idx, row_data in enumerate(sample_rows, 2):
+                    for col_idx, value in enumerate(row_data, 1):
+                        cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                        cell.border = border
+                        cell.alignment = Alignment(vertical="center")
+                        
+                        # Format dates
+                        if isinstance(value, date):
+                            cell.number_format = "YYYY-MM-DD"
+                        elif col_idx in [7, 8, 9, 10, 11, 12, 13, 15]:  # Numeric columns
+                            cell.number_format = "#,##0"
+                
+                # Set column widths
+                col_widths = {
+                    "Type": 10, "Project": 10, "Sprint": 12, "EPIC": 20,
+                    "Story": 36, "Task": 30, "Quality": 9,
+                    "Budget Planned": 15, "Budget Consumed": 16, "Budget Remaining": 17,
+                    "Saving Planned": 15, "Saving Achived": 15, "Saving Pending": 14,
+                    "Date": 13, "Story Points": 13,
+                    "Priority": 10, "Assignee": 12, "Status": 13, "Dependencies": 16,
+                }
+                
+                for col_idx, header in enumerate(headers, 1):
+                    ws.column_dimensions[get_column_letter(col_idx)].width = col_widths.get(header, 14)
+                
+                # Add data validation dropdowns
+                last_row = 200  # Allow for many future rows
+                
+                # Type validation
+                type_validation = DataValidation(
+                    type="list",
+                    formula1='"Story,Task,Bug,Epic,Subtask"',
+                    allow_blank=True,
+                    showDropDown=True
+                )
+                type_validation.sqref = f"A2:A{last_row}"
+                ws.add_data_validation(type_validation)
+                
+                # Priority validation  
+                priority_validation = DataValidation(
+                    type="list",
+                    formula1='"Low,Medium,High,Critical"',
+                    allow_blank=True,
+                    showDropDown=True
+                )
+                priority_validation.sqref = f"P2:P{last_row}"
+                ws.add_data_validation(priority_validation)
+                
+                # Status validation
+                status_validation = DataValidation(
+                    type="list", 
+                    formula1='"To Do,In Progress,Done,Blocked,Review"',
+                    allow_blank=True,
+                    showDropDown=True
+                )
+                status_validation.sqref = f"R2:R{last_row}"
+                ws.add_data_validation(status_validation)
+                
+                # Freeze header row and add auto-filter
+                ws.freeze_panes = "A2"
+                ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+                
+                # Add Instructions sheet
+                ws2 = wb.create_sheet("Instructions")
+                ws2.column_dimensions["A"].width = 90
+                
+                instructions = [
+                    ("JIRA Dashboard Template — Instructions", True),
+                    ("", False),
+                    ("Required columns (do NOT rename or remove these):", True),
+                    ("  Type            — Ticket type: Story, Task, Bug, Epic, Subtask", False),
+                    ("  Project         — Project key or name (e.g. Alpha, Beta)", False),
+                    ("  Sprint          — Sprint name (e.g. Sprint 1)", False),
+                    ("  EPIC            — Epic name the ticket belongs to", False),
+                    ("  Story           — Parent story description", False),
+                    ("  Task            — Task description", False),
+                    ("  Quality         — Integer quality score (0 = no issues)", False),
+                    ("  Budget Planned  — Planned budget in your currency", False),
+                    ("  Budget Consumed — Budget spent so far", False),
+                    ("  Budget Remaining— Remaining budget (can be formula = Planned - Consumed)", False),
+                    ("  Saving Planned  — Planned savings", False),
+                    ("  Saving Achived  — Achieved savings (note: original spelling)", False),
+                    ("  Saving Pending  — Pending savings", False),
+                    ("  Date            — Date in YYYY-MM-DD format", False),
+                    ("  Story Points    — Effort estimate (integer)", False),
+                    ("  Priority        — High / Medium / Low / Critical", False),
+                    ("  Assignee        — Person responsible", False),
+                    ("  Status          — To Do / In Progress / Done / Blocked / Review", False),
+                    ("  Dependencies    — Optional free-text dependency notes", False),
+                    ("", False),
+                    ("Validation Rules:", True),
+                    ("  • All numeric columns must contain valid numbers", False),
+                    ("  • Dates must be in a standard format (YYYY-MM-DD recommended)", False),
+                    ("  • Priority must be: Low, Medium, High, or Critical", False),
+                    ("  • Status must be: To Do, In Progress, Done, Blocked, or Review", False),
+                    ("  • Type must be: Story, Task, Bug, Epic, or Subtask", False),
+                    ("  • Story Points must be positive integers", False),
+                    ("  • Budget/Saving columns should be non-negative numbers", False),
+                ]
+                
+                title_font = Font(bold=True, size=12, color="1F6FEB")
+                bold_font = Font(bold=True, size=10)
+                norm_font = Font(size=10)
+                
+                for r_idx, (text, is_header) in enumerate(instructions, 1):
+                    cell = ws2.cell(row=r_idx, column=1, value=text)
+                    if r_idx == 1:
+                        cell.font = title_font
+                    elif is_header:
+                        cell.font = bold_font
+                    else:
+                        cell.font = norm_font
                 
                 # Save to BytesIO
                 excel_buffer = BytesIO()
