@@ -187,8 +187,8 @@
         }
 
         th {
-            background: #2c5282;
-            color: white;
+            background: #e2e8f0;
+            color: #2d3748;
             padding: 15px;
             text-align: left;
             font-weight: 600;
@@ -199,7 +199,7 @@
         }
 
         th:hover {
-            background: #2a4365;
+            background: #cbd5e0;
         }
 
         td {
@@ -241,7 +241,7 @@
         .negative { color: #c53030; font-weight: 600; }
 
         button {
-            background: #2c5282;
+            background: #4299e1;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -253,7 +253,7 @@
         }
 
         button:hover {
-            background: #2a4365;
+            background: #3182ce;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(44, 82, 130, 0.3);
         }
@@ -274,12 +274,12 @@
 
         /* Executive Summary Banner */
         .exec-summary {
-            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            background: linear-gradient(135deg, #e2e8f0 0%, #f7fafc 100%);
             padding: 30px 35px;
             border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(44, 82, 130, 0.25);
+            box-shadow: 0 4px 16px rgba(226, 232, 240, 0.25);
             margin-bottom: 25px;
-            color: white;
+            color: #2d3748;
         }
 
         .exec-summary-header {
@@ -368,7 +368,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: #2c5282;
+            background: #4299e1;
             color: white;
             font-weight: 700;
             font-size: 1em;
@@ -481,8 +481,8 @@
         }
 
         .rag-table thead {
-            background: #2c5282;
-            color: white;
+            background: #e2e8f0;
+            color: #2d3748;
         }
 
         .rag-table th {
@@ -758,8 +758,8 @@
         }
 
         .group-level-1 {
-            background: #2c5282;
-            color: white;
+            background: #e2e8f0;
+            color: #2d3748;
             padding: 18px 25px;
             margin-bottom: 2px;
             cursor: pointer;
@@ -773,13 +773,13 @@
         }
 
         .group-level-1:hover {
-            background: #2a4365;
+            background: #cbd5e0;
             transform: translateX(3px);
         }
 
         .group-level-2 {
-            background: #4299e1;
-            color: white;
+            background: #bee3f8;
+            color: #2c5282;
             padding: 15px 25px 15px 45px;
             margin-bottom: 1px;
             cursor: pointer;
@@ -793,7 +793,7 @@
         }
 
         .group-level-2:hover {
-            background: #3182ce;
+            background: #90cdf4;
             transform: translateX(3px);
         }
 
@@ -927,7 +927,7 @@
 
         .task-details-row {
             display: grid;
-            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 80px 96px;
+            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 130px 96px;
             gap: 8px;
             padding: 12px 20px 12px 85px;
             border-bottom: 1px solid #f1f3f5;
@@ -1029,7 +1029,7 @@
 
         .task-details-header {
             display: grid;
-            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 80px 96px;
+            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 130px 96px;
             gap: 8px;
             padding: 10px 20px 10px 85px;
             background: #f8f9fa;
@@ -1051,6 +1051,245 @@
             font-size: inherit;
         }
 
+        .task-cell.date-cell {
+            white-space: normal;
+            line-height: 1.3;
+            font-size: 0.8em;
+        }
+
+        /* Project Analytics Styles */
+        .project-analytics-row {
+            background: #f8f9fa !important;
+        }
+
+        .project-analytics-cell {
+            padding: 0 !important;
+            border-bottom: 2px solid #e2e8f0 !important;
+        }
+
+        .project-analytics-container {
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            margin: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .analytics-header h4 {
+            color: #2d3748;
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chart-tab {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #4a5568;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-tab:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .chart-tab.active {
+            background: #4299e1;
+            color: white;
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
+        }
+
+        .chart-panel {
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .analytics-stats {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 6px;
+            font-size: 0.9em;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 15px;
+        }
+
+        .analytics-stat {
+            color: #4a5568;
+        }
+
+        .analytics-stat strong {
+            color: #2d3748;
+        }
+
+        /* User Performance Table */
+        .user-performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-top: 20px;
+        }
+
+        .user-performance-table thead {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .user-performance-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #2a4365;
+        }
+
+        .user-performance-table th.text-center,
+        .user-performance-table td.text-center {
+            text-align: center;
+        }
+
+        .user-performance-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+
+        .user-performance-table tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .user-performance-table td {
+            padding: 12px;
+            font-size: 0.9em;
+        }
+
+        .user-performance-table td.user-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .performance-metric {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            min-width: 80px;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .performance-metric.excellent { background: #c6f6d5; color: #2f855a; }
+        .performance-metric.good { background: #bee3f8; color: #2c5282; }
+        .performance-metric.fair { background: #feebc8; color: #d69e2e; }
+        .performance-metric.poor { background: #fed7d7; color: #c53030; }
+
+        /* Sprint Burndown Charts - Embedded in Accordions */
+        .sprint-burndown-container {
+            background: #f8f9fa;
+            margin: 15px 20px;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .burndown-chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .burndown-chart-header h4 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .burndown-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            font-size: 0.85em;
+            color: #4a5568;
+            white-space: nowrap;
+        }
+
+        .stat-item strong {
+            color: #2d3748;
+        }
+
+        .burndown-chart-wrapper {
+            height: 200px;
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .sprint-burndown-chart {
+            width: 100% !important;
+            height: 180px !important;
+        }
+
         .group-collapsed {
             display: none;
         }
@@ -1058,7 +1297,7 @@
         .expand-all-btn {
             margin-bottom: 20px;
             padding: 10px 20px;
-            background: #2c5282;
+            background: #4299e1;
             color: white;
             border: none;
             border-radius: 6px;
@@ -1069,7 +1308,7 @@
         }
 
         .expand-all-btn:hover {
-            background: #2a4365;
+            background: #3182ce;
             transform: translateY(-1px);
         }
 
@@ -1250,6 +1489,20 @@
             </div>
             <div class="grouped-view-container" id="sprintTableContainer"></div>
         </div>
+
+        <!-- LEVEL 6: User Performance View -->
+        <div class="section-divider">
+            <div class="section-step">5</div>
+            <div class="section-heading">
+                <span class="section-name">User Performance</span>
+                <span class="section-desc">Performance metrics by user across all sprints and projects</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="table-container">
+            <div class="user-performance-container" id="userPerformanceContainer"></div>
+        </div>
     </div>
 
     <script>
@@ -1377,12 +1630,13 @@
                 
                 // Project column
                 html += `
-                    <td class="col-project">
+                    <td class="col-project" style="cursor: pointer;" onclick="toggleProjectAnalytics('${projectName.replace(/\s+/g, '-').toLowerCase()}', '${projectName}')">
                         <div class="project-name">
                             <span>📁</span>
                             <span>${projectName}</span>
+                            <span class="toggle-analytics-icon" id="toggle-analytics-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="margin-left: 8px; font-size: 0.8em; color: #4299e1;">▼</span>
                         </div>
-                        <div class="project-meta">${formatCurrency(totalBudgetPlanned)} planned</div>
+                        <div class="project-meta">${formatPoints(totalBudgetPlanned)} planned</div>
                     </td>
                 `;
                 
@@ -1430,6 +1684,81 @@
                 
                 
                 html += '</tr>';
+                
+                // Add Project Analytics container row for each project
+                html += `
+                    <tr class="project-analytics-row">
+                        <td colspan="5" class="project-analytics-cell">
+                            <div class="project-analytics-container" style="display: none;" id="analytics-${projectName.replace(/\s+/g, '-').toLowerCase()}">
+                                <div class="analytics-header">
+                                    <h4>📊 Project Analytics: ${projectName}</h4>
+                                    <div class="chart-tabs">
+                                        <button class="chart-tab active" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'resource')">💰 Resources</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'progress')">📈 Progress</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'velocity')">🚀 Velocity</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'risk')">🔥 Risk</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'roi')">💎 ROI</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart 1: Resource Utilization -->
+                                <div class="chart-panel" id="resource-${projectName.replace(/\s+/g, '-').toLowerCase()}">
+                                    <div class="chart-title">💰 Resource Utilization</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="resource-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart 2: Progress vs Effort -->
+                                <div class="chart-panel" id="progress-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
+                                    <div class="chart-title">📈 Progress vs Effort Efficiency</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="progress-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart 3: Velocity & Quality -->
+                                <div class="chart-panel" id="velocity-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
+                                    <div class="chart-title">🚀 Velocity & Quality Trend</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="velocity-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart 4: Risk Heat Map -->
+                                <div class="chart-panel" id="risk-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
+                                    <div class="chart-title">🔥 Risk Assessment Matrix</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="risk-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart 5: ROI & Savings -->
+                                <div class="chart-panel" id="roi-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
+                                    <div class="chart-title">💎 ROI & Savings Realization</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="roi-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div class="analytics-stats">
+                                    <div class="analytics-stat">
+                                        <strong>Total Tasks:</strong> ${totalTasks}
+                                    </div>
+                                    <div class="analytics-stat">
+                                        <strong>Completed:</strong> ${completedTasks} (${completionRate.toFixed(1)}%)
+                                    </div>
+                                    <div class="analytics-stat">
+                                        <strong>Budget Efficiency:</strong> ${effortEfficiency > 0 ? '+' : ''}${effortEfficiency.toFixed(1)}%
+                                    </div>
+                                    <div class="analytics-stat">
+                                        <strong>Timeline:</strong> ${scheduleAdherence.toFixed(0)}% on track
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             });
             
             html += '</tbody></table>';
@@ -1583,6 +1912,7 @@
             updateMetrics();
             updateTable();
             updateSprintTable();
+            updateUserPerformanceTable();
         }
 
         function updateExecSummary() {
@@ -1697,6 +2027,8 @@
         function updateMetrics() {
             const totalTasks = filteredData.length;
             const totalStoryPoints = filteredData.reduce((sum, item) => sum + item['Story Points'], 0);
+            const completedStoryPoints = filteredData.filter(item => item.Status === 'Done').reduce((sum, item) => sum + item['Story Points'], 0);
+            const storyPointsPercentage = totalStoryPoints > 0 ? (completedStoryPoints / totalStoryPoints) * 100 : 0;
             const totalBudgetPlanned = filteredData.reduce((sum, item) => sum + item['Budget Planned'], 0);
             const totalBudgetConsumed = filteredData.reduce((sum, item) => sum + item['Budget Consumed'], 0);
             const totalBudgetRemaining = filteredData.reduce((sum, item) => sum + item['Budget Remaining'], 0);
@@ -1720,8 +2052,8 @@
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Story Points</div>
-                    <div class="metric-value">${formatNumber(totalStoryPoints)}</div>
-                    <div class="metric-subtext">Total across all tasks</div>
+                    <div class="metric-value">${formatNumber(completedStoryPoints)}/${formatNumber(totalStoryPoints)} (${Math.round(storyPointsPercentage * 10) / 10}%)</div>
+                    <div class="metric-subtext">Completed vs total story points</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Budget vs Efforts</div>
@@ -1729,8 +2061,8 @@
                     <div class="metric-subtext">${completionRate}% tasks done (${budgetEfficiency >= 0 ? '+' : ''}${budgetEfficiency}% efficiency)</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Budget Remaining</div>
-                    <div class="metric-value ${totalBudgetRemaining >= 0 ? 'positive' : 'negative'}">${formatCurrency(totalBudgetRemaining)}</div>
+                    <div class="metric-label">Budget Remaining (Story Points)</div>
+                    <div class="metric-value ${totalBudgetRemaining >= 0 ? 'positive' : 'negative'}">${formatPoints(totalBudgetRemaining)}</div>
                     <div class="metric-subtext">${totalBudgetRemaining >= 0 ? 'Under budget' : 'Over budget'}</div>
                 </div>
                 <div class="metric-card">
@@ -1787,8 +2119,8 @@
                     datasets: [{
                         label: 'Budget ($)',
                         data: [totalBudgetPlanned, totalBudgetConsumed, totalBudgetRemaining],
-                        backgroundColor: ['#4299e1', '#2c5282', totalBudgetRemaining >= 0 ? '#48bb78' : '#e53e3e'],
-                        borderColor: ['#3182ce', '#2a4365', totalBudgetRemaining >= 0 ? '#38a169' : '#c53030'],
+                        backgroundColor: ['#4299e1', '#3182ce', totalBudgetRemaining >= 0 ? '#48bb78' : '#e53e3e'],
+                        borderColor: ['#3182ce', '#2b77cb', totalBudgetRemaining >= 0 ? '#38a169' : '#c53030'],
                         borderWidth: 2
                     }]
                 },
@@ -1986,7 +2318,22 @@
             };
 
             const calcTimeline = (item) => {
-                if (item.Status === 'Done') return 'green';
+                if (item.Status === 'Done') {
+                    // For completed tasks, compare actual vs planned completion dates
+                    if (item['Actual Completion Date'] && item.Date) {
+                        const actualDate = new Date(item['Actual Completion Date']);
+                        const plannedDate = new Date(item.Date);
+                        
+                        if (!isNaN(actualDate) && !isNaN(plannedDate)) {
+                            const daysDiff = Math.floor((actualDate - plannedDate) / (1000 * 60 * 60 * 24));
+                            
+                            if (daysDiff <= 0) return 'green';  // On time or early
+                            if (daysDiff <= 7) return 'amber';  // Up to 7 days late
+                            return 'red';  // More than 7 days late
+                        }
+                    }
+                    return 'green'; // Default green for completed tasks without dates
+                }
                 const due = new Date(item.Date);
                 if (isNaN(due)) return 'amber';
                 const today = new Date();
@@ -2209,12 +2556,13 @@
                                         <div>Quality</div>
                                         <div>Assignee</div>
                                         <div>Points</div>
-                                        <div>Planned</div>
-                                        <div>Consumed</div>
-                                        <div>Remaining</div>
+                                        <div>Planned (pts)</div>
+                                        <div>Consumed (pts)</div>
+                                        <div>Remaining (pts)</div>
                                         <div>Savings</div>
                                         <div>Achieved</div>
-                                        <div>Date</div>
+                                        <div>Pending</div>
+                                        <div>Date / Completed</div>
                                         <div>Health (E/T/Q)</div>
                                     </div>
                                 `;
@@ -2232,14 +2580,24 @@
                                             <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
                                             <div class="task-cell">${item.Assignee}</div>
                                             <div class="task-cell">${item['Story Points']}</div>
-                                            <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
-                                            <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
+                                            <div class="task-cell">${formatPoints(item['Budget Planned'])}</div>
+                                            <div class="task-cell">${formatPoints(item['Budget Consumed'])}</div>
                                             <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">
-                                                ${formatCurrency(item['Budget Remaining'])}
+                                                ${formatPoints(item['Budget Remaining'])}
                                             </div>
                                             <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                                             <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
-                                            <div class="task-cell">${item.Date}</div>
+                                            <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                                            <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
+                                                const actualDate = new Date(item['Actual Completion Date']);
+                                                const plannedDate = new Date(item.Date);
+                                                return (!isNaN(actualDate) && !isNaN(plannedDate) && actualDate > plannedDate) ? '#e53e3e' : '#2f855a';
+                                            })()}; font-weight: 600;">→ ${item['Actual Completion Date']}</span>` : `<span style="color: ${(() => {
+                                                const plannedDate = new Date(item.Date);
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+                                                return (!isNaN(plannedDate) && plannedDate < today) ? '#e53e3e' : '#2d3748';
+                                            })()};">${item.Date}</span>`}</div>
                                             <div class="task-cell task-metrics-cell">${renderMetricChips(item._metrics, 'sm')}</div>
                                         </div>
                                     `;
@@ -2260,12 +2618,13 @@
                                     <div>Quality</div>
                                     <div>Assignee</div>
                                     <div>Points</div>
-                                    <div>Planned</div>
-                                    <div>Consumed</div>
-                                    <div>Remaining</div>
+                                    <div>Planned (pts)</div>
+                                    <div>Consumed (pts)</div>
+                                    <div>Remaining (pts)</div>
                                     <div>Savings</div>
                                     <div>Achieved</div>
-                                    <div>Date</div>
+                                    <div>Pending</div>
+                                    <div>Date / Completed</div>
                                     <div>Health (E/T/Q)</div>
                                 </div>
                             `;
@@ -2283,14 +2642,24 @@
                                         <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
                                         <div class="task-cell">${item.Assignee}</div>
                                         <div class="task-cell">${item['Story Points']}</div>
-                                        <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
-                                        <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
+                                        <div class="task-cell">${formatPoints(item['Budget Planned'])}</div>
+                                        <div class="task-cell">${formatPoints(item['Budget Consumed'])}</div>
                                         <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">
-                                            ${formatCurrency(item['Budget Remaining'])}
+                                            ${formatPoints(item['Budget Remaining'])}
                                         </div>
                                         <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                                         <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
-                                        <div class="task-cell">${item.Date}</div>
+                                        <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                                        <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
+                                            const actualDate = new Date(item['Actual Completion Date']);
+                                            const plannedDate = new Date(item.Date);
+                                            return (!isNaN(actualDate) && !isNaN(plannedDate) && actualDate > plannedDate) ? '#e53e3e' : '#2f855a';
+                                        })()}; font-weight: 600;">→ ${item['Actual Completion Date']}</span>` : `<span style="color: ${(() => {
+                                            const plannedDate = new Date(item.Date);
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            return (!isNaN(plannedDate) && plannedDate < today) ? '#e53e3e' : '#2d3748';
+                                        })()};">${item.Date}</span>`}</div>
                                         <div class="task-cell task-metrics-cell">${renderMetricChips(item._metrics, 'sm')}</div>
                                     </div>
                                 `;
@@ -2370,6 +2739,31 @@
             });
         }
 
+        // ===== Generate Sprint Burndown Chart HTML =====
+        function generateSprintBurndownChart(sprintName, sprintItems, sprintId) {
+            const totalStoryPoints = sprintItems.reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+            const completedStoryPoints = sprintItems.filter(item => item.Status === 'Done').reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+            const remainingStoryPoints = totalStoryPoints - completedStoryPoints;
+            
+            const chartId = `burndown-${sprintId}`;
+            
+            return `
+                <div class="sprint-burndown-container">
+                    <div class="burndown-chart-header">
+                        <h4>📊 Sprint Burndown Chart</h4>
+                        <div class="burndown-stats">
+                            <span class="stat-item">Total: <strong>${totalStoryPoints} pts</strong></span>
+                            <span class="stat-item">Completed: <strong>${completedStoryPoints} pts</strong></span>
+                            <span class="stat-item">Remaining: <strong>${remainingStoryPoints} pts</strong></span>
+                        </div>
+                    </div>
+                    <div class="burndown-chart-wrapper">
+                        <canvas id="${chartId}" class="sprint-burndown-chart"></canvas>
+                    </div>
+                </div>
+            `;
+        }
+
         // ===== Sprint View: same drill-down as the Detailed Task View, grouped by Sprint =====
         function updateSprintTable() {
             const container = document.getElementById('sprintTableContainer');
@@ -2399,7 +2793,22 @@
                 return 'green';
             };
             const calcTimeline = (item) => {
-                if (item.Status === 'Done') return 'green';
+                if (item.Status === 'Done') {
+                    // For completed tasks, compare actual vs planned completion dates
+                    if (item['Actual Completion Date'] && item.Date) {
+                        const actualDate = new Date(item['Actual Completion Date']);
+                        const plannedDate = new Date(item.Date);
+                        
+                        if (!isNaN(actualDate) && !isNaN(plannedDate)) {
+                            const daysDiff = Math.floor((actualDate - plannedDate) / (1000 * 60 * 60 * 24));
+                            
+                            if (daysDiff <= 0) return 'green';  // On time or early
+                            if (daysDiff <= 7) return 'amber';  // Up to 7 days late
+                            return 'red';  // More than 7 days late
+                        }
+                    }
+                    return 'green'; // Default green for completed tasks without dates
+                }
                 const due = new Date(item.Date);
                 if (isNaN(due)) return 'amber';
                 const today = new Date();
@@ -2483,12 +2892,13 @@
                         <div>Quality</div>
                         <div>Assignee</div>
                         <div>Points</div>
-                        <div>Planned</div>
-                        <div>Consumed</div>
-                        <div>Remaining</div>
+                        <div>Planned (pts)</div>
+                        <div>Consumed (pts)</div>
+                        <div>Remaining (pts)</div>
                         <div>Savings</div>
                         <div>Achieved</div>
-                        <div>Date</div>
+                        <div>Pending</div>
+                        <div>Date / Completed</div>
                         <div>Health (E/T/Q)</div>
                     </div>
                 `;
@@ -2505,12 +2915,22 @@
                             <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
                             <div class="task-cell">${item.Assignee}</div>
                             <div class="task-cell">${item['Story Points']}</div>
-                            <div class="task-cell">${formatCurrency(item['Budget Planned'])}</div>
-                            <div class="task-cell">${formatCurrency(item['Budget Consumed'])}</div>
-                            <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">${formatCurrency(item['Budget Remaining'])}</div>
+                            <div class="task-cell">${formatPoints(item['Budget Planned'])}</div>
+                            <div class="task-cell">${formatPoints(item['Budget Consumed'])}</div>
+                            <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">${formatPoints(item['Budget Remaining'])}</div>
                             <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                             <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
-                            <div class="task-cell">${item.Date}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                            <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
+                                const actualDate = new Date(item['Actual Completion Date']);
+                                const plannedDate = new Date(item.Date);
+                                return (!isNaN(actualDate) && !isNaN(plannedDate) && actualDate > plannedDate) ? '#e53e3e' : '#2f855a';
+                            })()}; font-weight: 600;">→ ${item['Actual Completion Date']}</span>` : `<span style="color: ${(() => {
+                                const plannedDate = new Date(item.Date);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                return (!isNaN(plannedDate) && plannedDate < today) ? '#e53e3e' : '#2d3748';
+                            })()};">${item.Date}</span>`}</div>
                             <div class="task-cell task-metrics-cell">${renderMetricChips(m, 'sm')}</div>
                         </div>
                     `;
@@ -2548,6 +2968,9 @@
                 html += groupHeader(1, sprintId, '🏃', sprint, sprintItems, true);
                 html += `<div class="${sprintId}-children group-collapsed">`;
 
+                // Add burndown chart for this sprint
+                html += generateSprintBurndownChart(sprint, sprintItems, sprintId);
+
                 Object.keys(sprintProjects).sort().forEach((project, pi) => {
                     const projEpics = sprintProjects[project];
                     const projItems = Object.values(projEpics).flatMap(ep => Object.values(ep).flat());
@@ -2581,6 +3004,14 @@
             });
 
             container.innerHTML = html;
+
+            // Create burndown charts for each sprint after HTML is inserted
+            Object.keys(grouped).sort(sprintSort).forEach((sprint, si) => {
+                const sprintItems = Object.values(grouped[sprint]).flatMap(pr =>
+                    Object.values(pr).flatMap(ep => Object.values(ep).flat()));
+                const sprintId = `sp-${si}`;
+                createSprintBurndownChart(sprint, sprintItems, sprintId);
+            });
         }
 
         let sprintAllExpanded = false;
@@ -2597,6 +3028,852 @@
 
             container.querySelectorAll('[class$="-children"]')
                 .forEach(child => child.classList.toggle('group-collapsed', !sprintAllExpanded));
+        }
+
+        // ===== User Performance View =====
+        function updateUserPerformanceTable() {
+            const container = document.getElementById('userPerformanceContainer');
+            if (!container) return;
+
+            // Group data by user (Assignee)
+            const userStats = {};
+            
+            filteredData.forEach(item => {
+                const user = item.Assignee || 'Unassigned';
+                const sprint = item.Sprint || 'No Sprint';
+                
+                if (!userStats[user]) {
+                    userStats[user] = {
+                        sprints: new Set(),
+                        totalSavings: 0,
+                        totalBugs: 0,
+                        totalStoryPoints: 0,
+                        totalTasks: 0,
+                        onTimeTasks: 0,
+                        sprintDetails: {}
+                    };
+                }
+
+                const userStat = userStats[user];
+                
+                // Add sprint
+                userStat.sprints.add(sprint);
+                
+                // Add savings (Saving Achived)
+                userStat.totalSavings += (item['Saving Achived'] || 0);
+                
+                // Add bugs (Quality field represents bug count)
+                userStat.totalBugs += (item.Quality || 0);
+                
+                // Add story points (Story Points field)
+                userStat.totalStoryPoints += (item['Story Points'] || 0);
+                
+                // Count total tasks
+                userStat.totalTasks++;
+                
+                // Check if task was completed on time
+                if (item.Status === 'Done') {
+                    if (item['Actual Completion Date'] && item.Date) {
+                        const actualDate = new Date(item['Actual Completion Date']);
+                        const plannedDate = new Date(item.Date);
+                        
+                        if (!isNaN(actualDate) && !isNaN(plannedDate)) {
+                            const daysDiff = Math.floor((actualDate - plannedDate) / (1000 * 60 * 60 * 24));
+                            if (daysDiff <= 0) { // On time or early
+                                userStat.onTimeTasks++;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Convert to array and calculate metrics
+            const userPerformanceData = Object.keys(userStats).map(user => {
+                const stats = userStats[user];
+                const sprintCount = stats.sprints.size;
+                const sprintCapacity = sprintCount * 30; // 30 points per sprint
+                
+                // Efficiency: (Story points / sprint capacity) * 100
+                const efficiency = sprintCapacity > 0 ? (stats.totalStoryPoints / sprintCapacity) * 100 : 0;
+                
+                // OnTime: (Tasks completed on time / total tasks) * 100
+                const onTimePercentage = stats.totalTasks > 0 ? (stats.onTimeTasks / stats.totalTasks) * 100 : 0;
+                
+                // Bugs: (Total bugs / total tasks) * 100
+                const bugPercentage = stats.totalTasks > 0 ? (stats.totalBugs / stats.totalTasks) * 100 : 0;
+                
+                return {
+                    user,
+                    sprintCount,
+                    totalSavings: stats.totalSavings,
+                    totalBugs: stats.totalBugs,
+                    totalTasks: stats.totalTasks,
+                    totalStoryPoints: stats.totalStoryPoints,
+                    sprintCapacity,
+                    onTimeTasks: stats.onTimeTasks,
+                    efficiency: Math.round(efficiency * 10) / 10, // Round to 1 decimal
+                    onTimePercentage: Math.round(onTimePercentage * 10) / 10, // Round to 1 decimal
+                    bugPercentage: Math.round(bugPercentage * 10) / 10 // Round to 1 decimal
+                };
+            });
+
+            // Sort by performance metrics (best performers first)
+            userPerformanceData.sort((a, b) => {
+                // Primary sort: OnTime percentage (higher is better)
+                if (b.onTimePercentage !== a.onTimePercentage) {
+                    return b.onTimePercentage - a.onTimePercentage;
+                }
+                
+                // Secondary sort: Efficiency percentage (higher is better)
+                if (b.efficiency !== a.efficiency) {
+                    return b.efficiency - a.efficiency;
+                }
+                
+                // Tertiary sort: Bug percentage (lower is better)
+                if (a.bugPercentage !== b.bugPercentage) {
+                    return a.bugPercentage - b.bugPercentage;
+                }
+                
+                // Final sort: Total savings (higher is better)
+                return b.totalSavings - a.totalSavings;
+            });
+
+            // Helper function to get performance class based on value and type
+            const getPerformanceClass = (value, type) => {
+                if (type === 'efficiency') {
+                    if (value >= 90) return 'excellent';
+                    if (value >= 75) return 'good';
+                    if (value >= 60) return 'fair';
+                    return 'poor';
+                } else if (type === 'ontime') {
+                    if (value >= 90) return 'excellent';
+                    if (value >= 80) return 'good';
+                    if (value >= 70) return 'fair';
+                    return 'poor';
+                } else if (type === 'bugs') {
+                    if (value <= 5) return 'excellent';
+                    if (value <= 10) return 'good';
+                    if (value <= 20) return 'fair';
+                    return 'poor';
+                }
+                return 'good';
+            };
+
+            // Generate HTML table
+            let html = `
+                <table class="user-performance-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th class="text-center">Sprints</th>
+                            <th class="text-center">Savings</th>
+                            <th class="text-center">Bugs</th>
+                            <th class="text-center">Efficiency (%)</th>
+                            <th class="text-center">OnTime (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            userPerformanceData.forEach(userData => {
+                const efficiencyClass = getPerformanceClass(userData.efficiency, 'efficiency');
+                const onTimeClass = getPerformanceClass(userData.onTimePercentage, 'ontime');
+                const bugsClass = getPerformanceClass(userData.bugPercentage, 'bugs');
+
+                html += `
+                    <tr>
+                        <td class="user-name">${userData.user}</td>
+                        <td class="text-center">${userData.sprintCount}</td>
+                        <td class="text-center">${formatCurrency(userData.totalSavings)}</td>
+                        <td class="text-center">
+                            <span class="performance-metric ${bugsClass}">${userData.totalBugs}/${userData.totalTasks} (${userData.bugPercentage}%)</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="performance-metric ${efficiencyClass}">${userData.totalStoryPoints}/${userData.sprintCapacity} (${userData.efficiency}%)</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="performance-metric ${onTimeClass}">${userData.onTimeTasks}/${userData.totalTasks} (${userData.onTimePercentage}%)</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // ===== Sprint Burndown Charts =====
+        function updateSprintBurndownCharts() {
+            const container = document.getElementById('sprintBurndownContainer');
+            if (!container) return;
+
+            // Group data by sprint
+            const sprintData = {};
+            filteredData.forEach(item => {
+                const sprint = item.Sprint || 'No Sprint';
+                if (!sprintData[sprint]) {
+                    sprintData[sprint] = [];
+                }
+                sprintData[sprint].push(item);
+            });
+
+            // Generate burndown chart for each sprint
+            let html = '';
+            Object.keys(sprintData).forEach(sprintName => {
+                const sprintItems = sprintData[sprintName];
+                const totalStoryPoints = sprintItems.reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+                const completedStoryPoints = sprintItems.filter(item => item.Status === 'Done').reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+                const remainingStoryPoints = totalStoryPoints - completedStoryPoints;
+                
+                // Calculate completion dates for burndown
+                const completedTasks = sprintItems.filter(item => item.Status === 'Done' && item['Actual Completion Date']);
+                const dates = completedTasks.map(item => item['Actual Completion Date']).sort();
+                
+                // Create cumulative burndown data
+                const burndownData = [];
+                let cumulativeCompleted = 0;
+                
+                // Start with total points
+                burndownData.push({
+                    date: dates[0] || new Date().toISOString().split('T')[0],
+                    remaining: totalStoryPoints,
+                    completed: 0
+                });
+                
+                // Add completion points
+                dates.forEach(date => {
+                    const tasksCompletedOnDate = completedTasks.filter(item => item['Actual Completion Date'] === date);
+                    const pointsCompletedOnDate = tasksCompletedOnDate.reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+                    cumulativeCompleted += pointsCompletedOnDate;
+                    
+                    burndownData.push({
+                        date: date,
+                        remaining: totalStoryPoints - cumulativeCompleted,
+                        completed: cumulativeCompleted
+                    });
+                });
+
+                html += `
+                    <div class="burndown-chart-container">
+                        <div class="burndown-chart-title">
+                            <span>${sprintName} Burndown</span>
+                            <div class="burndown-stats">
+                                <span>Total: ${totalStoryPoints} pts</span>
+                                <span>Completed: ${completedStoryPoints} pts</span>
+                                <span>Remaining: ${remainingStoryPoints} pts</span>
+                            </div>
+                        </div>
+                        <div class="burndown-chart">
+                            <canvas id="burndown-${sprintName.replace(/[^a-zA-Z0-9]/g, '_')}"></canvas>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Create charts after HTML is inserted
+            Object.keys(sprintData).forEach(sprintName => {
+                createBurndownChart(sprintName, sprintData[sprintName]);
+            });
+        }
+
+        function createSprintBurndownChart(sprintName, sprintItems, sprintId) {
+            const canvasId = `burndown-${sprintId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            const totalStoryPoints = sprintItems.reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+            const completedTasks = sprintItems.filter(item => item.Status === 'Done' && item['Actual Completion Date']);
+            
+            if (completedTasks.length === 0 || totalStoryPoints === 0) {
+                // No completed tasks, show message on canvas
+                const context = ctx.getContext('2d');
+                context.fillStyle = '#718096';
+                context.font = '14px sans-serif';
+                context.textAlign = 'center';
+                context.fillText('No completed tasks with dates available', ctx.width/2, ctx.height/2);
+                return;
+            }
+
+            // Get unique dates and sort them
+            const dates = [...new Set(completedTasks.map(item => item['Actual Completion Date']))].sort();
+            
+            // Calculate cumulative completion
+            const burndownData = [];
+            let cumulativeCompleted = 0;
+            
+            // Start with total story points
+            burndownData.push({
+                date: dates[0],
+                remaining: totalStoryPoints
+            });
+            
+            dates.forEach(date => {
+                const tasksCompletedOnDate = completedTasks.filter(item => item['Actual Completion Date'] === date);
+                const pointsCompletedOnDate = tasksCompletedOnDate.reduce((sum, item) => sum + (item['Story Points'] || 0), 0);
+                cumulativeCompleted += pointsCompletedOnDate;
+                
+                burndownData.push({
+                    date: date,
+                    remaining: totalStoryPoints - cumulativeCompleted
+                });
+            });
+
+            // Create ideal burndown line
+            const idealBurndown = burndownData.map((item, index) => {
+                const progress = index / Math.max(burndownData.length - 1, 1);
+                return totalStoryPoints * (1 - progress);
+            });
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: burndownData.map(item => new Date(item.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Actual Remaining',
+                        data: burndownData.map(item => item.remaining),
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointBackgroundColor: '#4299e1',
+                        pointBorderColor: '#3182ce',
+                        pointRadius: 3
+                    }, {
+                        label: 'Ideal Burndown',
+                        data: idealBurndown,
+                        borderColor: '#e53e3e',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Story Points',
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Completion Date',
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 5
+                        }
+                    }
+                }
+            });
+        }
+
+        // ===== Project Analytics Charts =====
+        function toggleProjectAnalytics(projectId, projectName) {
+            const analyticsContainer = document.getElementById(`analytics-${projectId}`);
+            const toggleIcon = document.getElementById(`toggle-analytics-${projectId}`);
+            
+            if (analyticsContainer.style.display === 'none') {
+                analyticsContainer.style.display = 'block';
+                toggleIcon.textContent = '▲';
+                createProjectAnalyticsCharts(projectName, projectId);
+            } else {
+                analyticsContainer.style.display = 'none';
+                toggleIcon.textContent = '▼';
+            }
+        }
+
+        function showChart(projectId, chartType) {
+            // Hide all chart panels for this project
+            const panels = ['resource', 'progress', 'velocity', 'risk', 'roi'];
+            panels.forEach(panel => {
+                const element = document.getElementById(`${panel}-${projectId}`);
+                if (element) element.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll(`#analytics-${projectId} .chart-tab`);
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected panel
+            const selectedPanel = document.getElementById(`${chartType}-${projectId}`);
+            if (selectedPanel) selectedPanel.style.display = 'block';
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function createProjectAnalyticsCharts(projectName, projectId) {
+            // Get tasks for this project
+            const projectTasks = filteredData.filter(item => 
+                item.Project === projectName
+            );
+
+            if (projectTasks.length === 0) return;
+
+            // Create all 5 charts
+            createResourceChart(projectTasks, projectId);
+            createProgressChart(projectTasks, projectId);
+            createVelocityChart(projectTasks, projectId);
+            createRiskChart(projectTasks, projectId);
+            createROIChart(projectTasks, projectId);
+        }
+
+        // Chart 1: Resource Utilization (Horizontal Stacked Bar)
+        function createResourceChart(tasks, projectId) {
+            const canvasId = `resource-chart-${projectId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Group by Epic/Story for resource breakdown
+            const resourceData = {};
+            tasks.forEach(task => {
+                const epic = task.EPIC || 'Other';
+                if (!resourceData[epic]) {
+                    resourceData[epic] = {
+                        planned: 0,
+                        consumed: 0,
+                        remaining: 0
+                    };
+                }
+                resourceData[epic].planned += task['Budget Planned'] || 0;
+                resourceData[epic].consumed += task['Budget Consumed'] || 0;
+                resourceData[epic].remaining += task['Budget Remaining'] || 0;
+            });
+
+            const labels = Object.keys(resourceData);
+            const consumedData = labels.map(epic => resourceData[epic].consumed);
+            const remainingData = labels.map(epic => resourceData[epic].remaining);
+
+            const config = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Budget Consumed',
+                        data: consumedData,
+                        backgroundColor: '#fed7d7',
+                        borderColor: '#e53e3e',
+                        borderWidth: 1
+                    }, {
+                        label: 'Budget Remaining',
+                        data: remainingData,
+                        backgroundColor: '#c6f6d5',
+                        borderColor: '#38a169',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Budget Utilization by Epic'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: { display: true, text: 'Budget (Story Points)' }
+                        },
+                        y: {
+                            stacked: true,
+                            title: { display: true, text: 'Epics' }
+                        }
+                    }
+                }
+            };
+
+            destroyAndCreateChart('resourceCharts', canvasId, ctx, config);
+        }
+
+        // Chart 2: Progress vs Effort (Scatter Plot)
+        function createProgressChart(tasks, projectId) {
+            const canvasId = `progress-chart-${projectId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Group by Epic for scatter points
+            const progressData = {};
+            tasks.forEach(task => {
+                const epic = task.EPIC || 'Other';
+                if (!progressData[epic]) {
+                    progressData[epic] = {
+                        totalTasks: 0,
+                        completedTasks: 0,
+                        totalPlanned: 0,
+                        totalConsumed: 0
+                    };
+                }
+                progressData[epic].totalTasks++;
+                if (task.Status === 'Done') progressData[epic].completedTasks++;
+                progressData[epic].totalPlanned += task['Budget Planned'] || 0;
+                progressData[epic].totalConsumed += task['Budget Consumed'] || 0;
+            });
+
+            const scatterData = Object.keys(progressData).map(epic => {
+                const data = progressData[epic];
+                const completionRate = (data.completedTasks / data.totalTasks) * 100;
+                const effortRate = data.totalPlanned > 0 ? (data.totalConsumed / data.totalPlanned) * 100 : 0;
+                return {
+                    x: completionRate,
+                    y: effortRate,
+                    label: epic,
+                    size: data.totalTasks * 2
+                };
+            });
+
+            const config = {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Epics',
+                        data: scatterData,
+                        backgroundColor: scatterData.map(point => 
+                            point.y > point.x + 10 ? '#fed7d7' :  // Over budget
+                            point.y < point.x - 10 ? '#c6f6d5' :  // Under budget
+                            '#feebc8'  // On track
+                        ),
+                        borderColor: scatterData.map(point => 
+                            point.y > point.x + 10 ? '#e53e3e' :
+                            point.y < point.x - 10 ? '#38a169' :
+                            '#dd6b20'
+                        ),
+                        pointRadius: scatterData.map(point => Math.max(5, point.size))
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Progress vs Effort Efficiency by Epic'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return [
+                                        `Epic: ${point.label}`,
+                                        `Completion: ${point.x.toFixed(1)}%`,
+                                        `Effort Used: ${point.y.toFixed(1)}%`,
+                                        `Efficiency: ${(point.x - point.y).toFixed(1)}%`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Completion Rate (%)' },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: { display: true, text: 'Effort Used (%)' },
+                            min: 0
+                        }
+                    }
+                }
+            };
+
+            destroyAndCreateChart('progressCharts', canvasId, ctx, config);
+        }
+
+        // Chart 3: Velocity & Quality (Dual-axis Line)
+        function createVelocityChart(tasks, projectId) {
+            const canvasId = `velocity-chart-${projectId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Group by Sprint for velocity tracking
+            const sprintData = {};
+            tasks.forEach(task => {
+                const sprint = task.Sprint || 'Unknown';
+                if (!sprintData[sprint]) {
+                    sprintData[sprint] = {
+                        completed: 0,
+                        totalBugs: 0,
+                        totalTasks: 0
+                    };
+                }
+                if (task.Status === 'Done') {
+                    sprintData[sprint].completed += task['Story Points'] || 0;
+                }
+                sprintData[sprint].totalBugs += task.Quality || 0;
+                sprintData[sprint].totalTasks++;
+            });
+
+            const sprints = Object.keys(sprintData).sort();
+            const velocityData = sprints.map(sprint => sprintData[sprint].completed);
+            const qualityData = sprints.map(sprint => 
+                sprintData[sprint].totalTasks > 0 ? 
+                (sprintData[sprint].totalBugs / sprintData[sprint].totalTasks) : 0
+            );
+
+            const config = {
+                type: 'line',
+                data: {
+                    labels: sprints,
+                    datasets: [{
+                        label: 'Velocity (Story Points)',
+                        data: velocityData,
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Avg Bugs per Task',
+                        data: qualityData,
+                        borderColor: '#ed8936',
+                        backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Velocity & Quality Trend by Sprint'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Story Points' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Bugs per Task' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            };
+
+            destroyAndCreateChart('velocityCharts', canvasId, ctx, config);
+        }
+
+        // Chart 4: Risk Heat Map (Matrix)
+        function createRiskChart(tasks, projectId) {
+            const canvasId = `risk-chart-${projectId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Calculate actual risk factors from project data
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.Status === 'Done').length;
+            const overdueTasks = tasks.filter(t => {
+                const dueDate = new Date(t.Date);
+                const today = new Date();
+                return dueDate < today && t.Status !== 'Done';
+            }).length;
+            
+            const totalBudget = tasks.reduce((sum, t) => sum + (t['Budget Planned'] || 0), 0);
+            const consumedBudget = tasks.reduce((sum, t) => sum + (t['Budget Consumed'] || 0), 0);
+            const budgetOverrun = totalBudget > 0 ? (consumedBudget / totalBudget) > 1.2 : false;
+            
+            const totalBugs = tasks.reduce((sum, t) => sum + (t.Quality || 0), 0);
+            const avgBugsPerTask = totalTasks > 0 ? totalBugs / totalTasks : 0;
+
+            // Risk matrix based on actual data
+            const riskMatrix = [
+                { x: 1, y: 1, risk: `Timeline: ${overdueTasks}/${totalTasks} overdue`, 
+                  color: overdueTasks > totalTasks * 0.2 ? '#fed7d7' : overdueTasks > 0 ? '#feebc8' : '#c6f6d5', 
+                  size: Math.max(8, overdueTasks * 2) },
+                { x: 2, y: 1, risk: `Budget: ${((consumedBudget/totalBudget)*100).toFixed(0)}% used`, 
+                  color: budgetOverrun ? '#fed7d7' : consumedBudget/totalBudget > 0.8 ? '#feebc8' : '#c6f6d5', 
+                  size: Math.max(8, (consumedBudget/totalBudget) * 20) },
+                { x: 3, y: 1, risk: `Quality: ${avgBugsPerTask.toFixed(1)} bugs/task`, 
+                  color: avgBugsPerTask > 2 ? '#fed7d7' : avgBugsPerTask > 1 ? '#feebc8' : '#c6f6d5', 
+                  size: Math.max(8, avgBugsPerTask * 8) },
+            ];
+
+            const config = {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Risk Factors',
+                        data: riskMatrix,
+                        backgroundColor: riskMatrix.map(point => point.color),
+                        borderColor: '#2d3748',
+                        pointRadius: riskMatrix.map(point => point.size)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Project Risk Assessment'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return point.risk;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Risk Category' },
+                            min: 0.5,
+                            max: 3.5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', 'Timeline', 'Budget', 'Quality'];
+                                    return labels[value] || '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: 'Risk Level' },
+                            min: 0.5,
+                            max: 1.5,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return 'Current Status';
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            destroyAndCreateChart('riskCharts', canvasId, ctx, config);
+        }
+
+        // Chart 5: ROI & Savings (Waterfall)
+        function createROIChart(tasks, projectId) {
+            const canvasId = `roi-chart-${projectId}`;
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            const totalPlanned = tasks.reduce((sum, task) => sum + (task['Saving Planned'] || 0), 0);
+            const totalAchieved = tasks.reduce((sum, task) => sum + (task['Saving Achived'] || 0), 0);
+            const totalPending = tasks.reduce((sum, task) => sum + (task['Saving Pending'] || 0), 0);
+            const netROI = totalAchieved + totalPending - totalPlanned;
+
+            const config = {
+                type: 'bar',
+                data: {
+                    labels: ['Planned Savings', 'Achieved Savings', 'Pending Savings', 'Net ROI'],
+                    datasets: [{
+                        label: 'Savings ($)',
+                        data: [totalPlanned, totalAchieved, totalPending, netROI],
+                        backgroundColor: [
+                            '#bee3f8',   // Planned - blue
+                            '#c6f6d5',   // Achieved - green
+                            '#feebc8',   // Pending - orange
+                            netROI >= 0 ? '#c6f6d5' : '#fed7d7'  // Net - green if positive, red if negative
+                        ],
+                        borderColor: [
+                            '#3182ce',
+                            '#38a169',
+                            '#dd6b20',
+                            netROI >= 0 ? '#38a169' : '#e53e3e'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'ROI & Savings Realization'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Amount ($)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            destroyAndCreateChart('roiCharts', canvasId, ctx, config);
+        }
+
+        // Utility function to destroy and create charts
+        function destroyAndCreateChart(chartType, canvasId, ctx, config) {
+            if (!window.analyticsCharts) {
+                window.analyticsCharts = {};
+            }
+            
+            if (window.analyticsCharts[canvasId]) {
+                window.analyticsCharts[canvasId].destroy();
+            }
+            
+            window.analyticsCharts[canvasId] = new Chart(ctx, config);
         }
 
         // Format numbers with K for thousands
@@ -2619,6 +3896,17 @@
                 return '$' + (num / 1000).toFixed(1).replace('.0', '') + 'K';
             }
             return '$' + num.toString();
+        }
+
+        // Format story points with K/M suffixes but no $ sign
+        function formatPoints(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace('.0', '') + 'M pts';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace('.0', '') + 'K pts';
+            }
+            return num.toString() + ' pts';
         }
 
         function sortTable(column) {

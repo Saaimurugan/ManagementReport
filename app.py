@@ -697,6 +697,13 @@ def excel_to_json_memory(file_stream) -> tuple[dict, int]:
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors='coerce').dt.strftime("%Y-%m-%d")
         
+        # Handle Actual Completion Date conversion
+        if "Actual Completion Date" in df.columns:
+            df["Actual Completion Date"] = pd.to_datetime(df["Actual Completion Date"], errors='coerce').dt.strftime("%Y-%m-%d")
+        
+        # Replace NaN values with None for JSON compatibility
+        df = df.where(pd.notnull(df), None)
+        
         data = df.to_dict(orient="records")
         logger.info(f"Successfully processed {len(data)} records in memory")
         
@@ -710,7 +717,21 @@ def excel_to_json_memory(file_stream) -> tuple[dict, int]:
 def build_standalone_memory(data: list, template_content: str) -> str:
     """Build standalone dashboard in memory without file I/O."""
     try:
+        import pandas as pd
         logger.debug("Building standalone dashboard in memory")
+
+        # Clean data for JSON serialization
+        cleaned_data = []
+        for record in data:
+            cleaned_record = {}
+            for key, value in record.items():
+                if pd.isna(value):
+                    cleaned_record[key] = None
+                elif isinstance(value, pd.Timestamp):
+                    cleaned_record[key] = value.strftime("%Y-%m-%d")
+                else:
+                    cleaned_record[key] = value
+            cleaned_data.append(cleaned_record)
 
         loader_pattern = re.compile(
             r"        // Load data from jira_data\.json\s*\n"
@@ -721,7 +742,7 @@ def build_standalone_memory(data: list, template_content: str) -> str:
 
         embedded_code = (
             "        // Load data (embedded)\n"
-            "        allData = " + json.dumps(data) + ";\n"
+            "        allData = " + json.dumps(cleaned_data) + ";\n"
             "                initializeDashboard();"
         )
 
@@ -731,7 +752,7 @@ def build_standalone_memory(data: list, template_content: str) -> str:
                 f"Expected exactly 1 fetch loader in dashboard.html, found {count}."
             )
 
-        logger.info(f"Successfully built standalone dashboard with {len(data)} records")
+        logger.info(f"Successfully built standalone dashboard with {len(cleaned_data)} records")
         return new_html
     except Exception as e:
         logger.error(f"Error in build_standalone_memory: {str(e)}")
@@ -974,20 +995,20 @@ def download_template():
                     "Type", "Project", "Sprint", "EPIC", "Story", "Task",
                     "Quality", "Budget Planned", "Budget Consumed", "Budget Remaining",
                     "Saving Planned", "Saving Achived", "Saving Pending",
-                    "Date", "Story Points", "Priority", "Assignee", "Status", "Dependencies"
+                    "Date", "Actual Completion Date", "Story Points", "Priority", "Assignee", "Person", "Status", "Dependencies"
                 ]
                 
                 # Sample realistic data
                 sample_rows = [
                     ("Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO", 
                      "Frontend implementation", 0, 3000, 1800, 1200, 400, 200, 200, 
-                     date(2026, 1, 10), 3, "High", "Alice", "Done", ""),
+                     date(2026, 1, 10), date(2026, 1, 8), 3, "High", "Alice", "Alice", "Done", ""),
                     ("Task", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
                      "Unit tests", 1, 1200, 900, 300, 150, 90, 60,
-                     date(2026, 1, 14), 2, "High", "Bob", "Done", ""),
+                     date(2026, 1, 14), date(2026, 1, 16), 2, "High", "Bob", "Bob", "Done", ""),
                     ("Story", "Beta", "Sprint 2", "Reporting", "Management dashboard",
                      "Data model", 0, 5000, 3000, 2000, 600, 300, 300,
-                     date(2026, 2, 11), 8, "Medium", "Eve", "In Progress", ""),
+                     date(2026, 2, 11), None, 8, "Medium", "Eve", "Eve", "In Progress", ""),
                 ]
                 
                 # Styles
@@ -1017,7 +1038,7 @@ def download_template():
                         # Format dates
                         if isinstance(value, date):
                             cell.number_format = "YYYY-MM-DD"
-                        elif col_idx in [7, 8, 9, 10, 11, 12, 13, 15]:  # Numeric columns
+                        elif col_idx in [7, 8, 9, 10, 11, 12, 13, 16]:  # Numeric columns (updated indices)
                             cell.number_format = "#,##0"
                 
                 # Set column widths
@@ -1026,8 +1047,8 @@ def download_template():
                     "Story": 36, "Task": 30, "Quality": 9,
                     "Budget Planned": 15, "Budget Consumed": 16, "Budget Remaining": 17,
                     "Saving Planned": 15, "Saving Achived": 15, "Saving Pending": 14,
-                    "Date": 13, "Story Points": 13,
-                    "Priority": 10, "Assignee": 12, "Status": 13, "Dependencies": 16,
+                    "Date": 13, "Actual Completion Date": 18, "Story Points": 13,
+                    "Priority": 10, "Assignee": 12, "Person": 12, "Status": 13, "Dependencies": 16,
                 }
                 
                 for col_idx, header in enumerate(headers, 1):
@@ -1053,7 +1074,7 @@ def download_template():
                     allow_blank=True,
                     showDropDown=True
                 )
-                priority_validation.sqref = f"P2:P{last_row}"
+                priority_validation.sqref = f"Q2:Q{last_row}"  # Updated column position
                 ws.add_data_validation(priority_validation)
                 
                 # Status validation
@@ -1063,7 +1084,7 @@ def download_template():
                     allow_blank=True,
                     showDropDown=True
                 )
-                status_validation.sqref = f"R2:R{last_row}"
+                status_validation.sqref = f"T2:T{last_row}"  # Updated column position
                 ws.add_data_validation(status_validation)
                 
                 # Freeze header row and add auto-filter
@@ -1084,28 +1105,40 @@ def download_template():
                     ("  EPIC            — Epic name the ticket belongs to", False),
                     ("  Story           — Parent story description", False),
                     ("  Task            — Task description", False),
-                    ("  Quality         — Integer quality score (0 = no issues)", False),
-                    ("  Budget Planned  — Planned budget in your currency", False),
-                    ("  Budget Consumed — Budget spent so far", False),
-                    ("  Budget Remaining— Remaining budget (can be formula = Planned - Consumed)", False),
-                    ("  Saving Planned  — Planned savings", False),
-                    ("  Saving Achived  — Achieved savings (note: original spelling)", False),
-                    ("  Saving Pending  — Pending savings", False),
-                    ("  Date            — Date in YYYY-MM-DD format", False),
+                    ("  Quality         — Integer bug count (0 = no bugs)", False),
+                    ("  Budget Planned  — Planned effort in story points", False),
+                    ("  Budget Consumed — Story points consumed so far", False),
+                    ("  Budget Remaining— Remaining story points", False),
+                    ("  Saving Planned  — Planned monetary savings", False),
+                    ("  Saving Achived  — Achieved monetary savings (note: original spelling)", False),
+                    ("  Saving Pending  — Pending monetary savings", False),
+                    ("  Date            — Planned completion date (YYYY-MM-DD format)", False),
+                    ("  Actual Completion Date — Actual completion date for Done tasks (YYYY-MM-DD)", False),
                     ("  Story Points    — Effort estimate (integer)", False),
                     ("  Priority        — High / Medium / Low / Critical", False),
                     ("  Assignee        — Person responsible", False),
+                    ("  Person          — Person name (can be same as Assignee)", False),
                     ("  Status          — To Do / In Progress / Done / Blocked / Review", False),
                     ("  Dependencies    — Optional free-text dependency notes", False),
                     ("", False),
                     ("Validation Rules:", True),
                     ("  • All numeric columns must contain valid numbers", False),
                     ("  • Dates must be in a standard format (YYYY-MM-DD recommended)", False),
+                    ("  • Actual Completion Date: Only fill for tasks with Status = 'Done'", False),
                     ("  • Priority must be: Low, Medium, High, or Critical", False),
                     ("  • Status must be: To Do, In Progress, Done, Blocked, or Review", False),
                     ("  • Type must be: Story, Task, Bug, Epic, or Subtask", False),
                     ("  • Story Points must be positive integers", False),
-                    ("  • Budget/Saving columns should be non-negative numbers", False),
+                    ("  • Budget columns represent story points (effort), not money", False),
+                    ("  • Saving columns represent monetary values", False),
+                    ("  • Quality = bug count (0 = no bugs, higher = more bugs)", False),
+                    ("", False),
+                    ("Key Features in Dashboard:", True),
+                    ("  • Budget fields displayed as story points (e.g., '150 pts')", False),
+                    ("  • Completed tasks show both planned and actual completion dates", False),
+                    ("  • Late deliveries highlighted in red, on-time in green", False),
+                    ("  • User performance metrics: efficiency, on-time %, bug rate", False),
+                    ("  • Three-level health indicators: Efforts, Timeline, Quality", False),
                 ]
                 
                 title_font = Font(bold=True, size=12, color="1F6FEB")
