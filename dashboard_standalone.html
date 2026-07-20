@@ -1570,24 +1570,34 @@
                 // Treat the "Date" field as the planned due date. Of the tasks that were
                 // planned to be finished by today, how many are actually Done (on plan)?
                 const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                today.setHours(23, 59, 59, 999); // Use end of day to be more inclusive
 
                 const dueByNow = projectData.filter(item => {
                     const d = new Date(item.Date);
                     return !isNaN(d) && d <= today;
                 });
                 const completedOnPlan = dueByNow.filter(item => item.Status === 'Done').length;
-                const overdueCount = dueByNow.length - completedOnPlan; // planned by now but not Done
+                // Count tasks that are overdue (past due date and not completed)
+                const overdueCount = projectData.filter(item => {
+                    const dueDate = new Date(item.Date);
+                    const isOverdue = !isNaN(dueDate) && dueDate < today && item.Status !== 'Done';
+                    if (isOverdue) {
+                        console.log(`[RAG TABLE] Overdue task in ${projectName}: ${item.Task}, due: ${item.Date}, status: ${item.Status}`);
+                    }
+                    return isOverdue;
+                }).length;
                 const scheduleAdherence = dueByNow.length > 0
                     ? (completedOnPlan / dueByNow.length) * 100
                     : 100; // nothing due yet -> on plan
 
                 // Timeline status:
-                //   Green: >= 90% of due-by-now tasks completed on plan
+                //   Red: Any tasks are overdue (past due date and not completed)
+                //   Green: >= 90% of due-by-now tasks completed on plan  
                 //   Amber: 70% - 90%
-                //   Red:   < 70% (many tasks overdue vs plan)
                 let timelineStatus;
-                if (scheduleAdherence >= 90) {
+                if (overdueCount > 0) {
+                    timelineStatus = 'red'; // Any overdue tasks = red
+                } else if (scheduleAdherence >= 90) {
                     timelineStatus = 'green';
                 } else if (scheduleAdherence >= 70) {
                     timelineStatus = 'amber';
@@ -1657,6 +1667,7 @@
                 `;
 
                 // Timeline column (Completed Due date vs Plan)
+                console.log(`[RAG TABLE] About to generate HTML for ${projectName} with timelineStatus=${timelineStatus}`);
                 html += `
                     <td class="rag-cell">
                         <div class="rag-status-box status-${timelineStatus}">
@@ -2061,11 +2072,7 @@
                     <div class="metric-value">${formatCurrency(totalSavingsAchieved)}/${formatCurrency(totalSavingsPlanned)}</div>
                     <div class="metric-subtext">${savingsRate}% of target savings</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-label">Overall Progress</div>
-                    <div class="metric-value">${completionRate}%</div>
-                    <div class="metric-subtext">${completedTasks}/${totalTasks} tasks complete</div>
-                </div>
+
             `;
 
             document.getElementById('metrics').innerHTML = metricsHTML;
@@ -3707,7 +3714,8 @@
             const overdueTasks = tasks.filter(t => {
                 const dueDate = new Date(t.Date);
                 const today = new Date();
-                return dueDate < today && t.Status !== 'Done';
+                today.setHours(23, 59, 59, 999); // Use same logic as timeline calculation
+                return !isNaN(dueDate) && dueDate < today && t.Status !== 'Done';
             }).length;
             
             const totalBudget = tasks.reduce((sum, t) => sum + (t['Budget Planned'] || 0), 0);

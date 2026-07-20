@@ -603,7 +603,7 @@ def validate_excel_format(df) -> tuple[bool, list]:
     
     # Check Priority values
     if "Priority" in df.columns:
-        valid_priorities = ["Low", "Medium", "High", "Critical"]
+        valid_priorities = ["Low", "Medium", "High", "Critical", "Normal"]
         invalid_priorities = df[df["Priority"].notna()]["Priority"].unique()
         invalid_priorities = [p for p in invalid_priorities if str(p).strip() not in valid_priorities]
         if invalid_priorities:
@@ -1070,7 +1070,7 @@ def download_template():
                 # Priority validation  
                 priority_validation = DataValidation(
                     type="list",
-                    formula1='"Low,Medium,High,Critical"',
+                    formula1='"Low,Medium,High,Critical,Normal"',
                     allow_blank=True,
                     showDropDown=True
                 )
