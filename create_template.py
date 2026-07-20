@@ -24,24 +24,24 @@ from openpyxl.worksheet.datavalidation import DataValidation
 # Sample rows (10 realistic tickets)
 # ---------------------------------------------------------------------------
 SAMPLE_ROWS = [
-    # Type,    Project,  Sprint,    EPIC,            Story,                          Task,                    Quality, BudgetPlanned, BudgetConsumed, BudgetRemaining, SavingPlanned, SavingAchieved, SavingPending, Date,       StoryPoints, Priority, Assignee, Status,      Dependencies
-    ("Story",  "Alpha",  "Sprint 1","User Auth",     "Login with SSO",               "Frontend implementation",  0,  3000, 1800, 1200,  400, 200, 200, date(2026, 1, 10), 3, "High",   "Alice",   "Done",        ""),
-    ("Task",   "Alpha",  "Sprint 1","User Auth",     "Login with SSO",               "Unit tests",               1,  1200,  900,  300,  150,  90,  60, date(2026, 1, 14), 2, "High",   "Bob",     "Done",        ""),
-    ("Story",  "Alpha",  "Sprint 2","User Auth",     "Password reset flow",          "API endpoint",             0,  2500, 2500,    0,  300, 300,   0, date(2026, 1, 28), 5, "Medium", "Carol",   "Done",        ""),
-    ("Task",   "Alpha",  "Sprint 2","User Auth",     "Password reset flow",          "Email template design",    0,   800,  400,  400,  100,  50,  50, date(2026, 2,  4), 1, "Low",    "Dave",    "In Progress", ""),
-    ("Story",  "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Data model",               0,  5000, 3000, 2000,  600, 300, 300, date(2026, 2, 11), 8, "High",   "Eve",     "In Progress", ""),
-    ("Task",   "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Chart components",         2,  2200, 1100, 1100,  250, 100, 150, date(2026, 2, 18), 3, "Medium", "Frank",   "In Progress", ""),
-    ("Bug",    "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Fix date filter",          3,   600,    0,  600,    0,   0,   0, date(2026, 2, 20), 1, "High",   "Grace",   "To Do",       ""),
-    ("Story",  "Beta",   "Sprint 4","Integrations",  "Connect to third-party API",   "OAuth handshake",          0,  4000, 4000,    0,  500, 500,   0, date(2026, 3,  5), 5, "High",   "Henry",   "Done",        ""),
-    ("Task",   "Gamma",  "Sprint 4","Integrations",  "Connect to third-party API",   "Rate-limit handling",      1,  1500,  750,  750,  200,  80, 120, date(2026, 3, 12), 2, "Medium", "Iris",    "In Progress", ""),
-    ("Story",  "Gamma",  "Sprint 5","Performance",   "Reduce API response time",     "Query optimisation",       0,  3500,  500, 3000,  450,  50, 400, date(2026, 3, 19), 5, "Medium", "Jack",    "To Do",       ""),
+    # Client, Type,    Project,  Sprint,    EPIC,            Story,                          Task,                    Quality, BudgetPlanned, BudgetConsumed, BudgetRemaining, SavingPlanned, SavingAchieved, SavingPending, StartDate,       Date,       StoryPoints, Priority, Assignee, Status,      Dependencies
+    ("Acme Corp", "Story",  "Alpha",  "Sprint 1","User Auth",     "Login with SSO",               "Frontend implementation",  0,  3000, 1800, 1200,  400, 200, 200, date(2026, 1, 5), date(2026, 1, 10), 3, "High",   "Alice",   "Done",        ""),
+    ("Acme Corp", "Task",   "Alpha",  "Sprint 1","User Auth",     "Login with SSO",               "Unit tests",               1,  1200,  900,  300,  150,  90,  60, date(2026, 1, 8), date(2026, 1, 14), 2, "High",   "Bob",     "Done",        ""),
+    ("Acme Corp", "Story",  "Alpha",  "Sprint 2","User Auth",     "Password reset flow",          "API endpoint",             0,  2500, 2500,    0,  300, 300,   0, date(2026, 1, 20), date(2026, 1, 28), 5, "Medium", "Carol",   "Done",        ""),
+    ("Beta Ltd",  "Task",   "Alpha",  "Sprint 2","User Auth",     "Password reset flow",          "Email template design",    0,   800,  400,  400,  100,  50,  50, date(2026, 1, 25), date(2026, 2,  4), 1, "Low",    "Dave",    "In Progress", ""),
+    ("Beta Ltd",  "Story",  "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Data model",               0,  5000, 3000, 2000,  600, 300, 300, date(2026, 2, 5), date(2026, 2, 11), 8, "High",   "Eve",     "In Progress", ""),
+    ("Gamma Inc", "Task",   "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Chart components",         2,  2200, 1100, 1100,  250, 100, 150, date(2026, 2, 10), date(2026, 2, 18), 3, "Medium", "Frank",   "In Progress", ""),
+    ("Gamma Inc", "Bug",    "Beta",   "Sprint 3","Reporting",     "Management dashboard",         "Fix date filter",          3,   600,    0,  600,    0,   0,   0, date(2026, 2, 15), date(2026, 2, 20), 1, "High",   "Grace",   "To Do",       ""),
+    ("Delta Co",  "Story",  "Beta",   "Sprint 4","Integrations",  "Connect to third-party API",   "OAuth handshake",          0,  4000, 4000,    0,  500, 500,   0, date(2026, 2, 28), date(2026, 3,  5), 5, "High",   "Henry",   "Done",        ""),
+    ("Delta Co",  "Task",   "Gamma",  "Sprint 4","Integrations",  "Connect to third-party API",   "Rate-limit handling",      1,  1500,  750,  750,  200,  80, 120, date(2026, 3, 5), date(2026, 3, 12), 2, "Medium", "Iris",    "In Progress", ""),
+    ("Epsilon LLC", "Story",  "Gamma",  "Sprint 5","Performance",   "Reduce API response time",     "Query optimisation",       0,  3500,  500, 3000,  450,  50, 400, date(2026, 3, 10), date(2026, 3, 19), 5, "Medium", "Jack",    "To Do",       ""),
 ]
 
 COLUMNS = [
-    "Type", "Project", "Sprint", "EPIC", "Story", "Task",
+    "Client", "Type", "Project", "Sprint", "EPIC", "Story", "Task",
     "Quality", "Budget Planned", "Budget Consumed", "Budget Remaining",
     "Saving Planned", "Saving Achived", "Saving Pending",
-    "Date", "Story Points", "Priority", "Assignee", "Status", "Dependencies",
+    "Start Date", "Date", "Story Points", "Priority", "Assignee", "Status", "Dependencies",
 ]
 
 # ---------------------------------------------------------------------------
@@ -96,16 +96,16 @@ def build_template(output_path: str) -> None:
                 "Quality", "Story Points",
             ):
                 cell.number_format = num_fmt
-            elif col_name == "Date":
+            elif col_name in ("Date", "Start Date"):
                 cell.number_format = date_fmt
 
     # ── Column widths ────────────────────────────────────────────────────────
     col_widths = {
-        "Type": 10, "Project": 10, "Sprint": 12, "EPIC": 20,
+        "Client": 15, "Type": 10, "Project": 10, "Sprint": 12, "EPIC": 20,
         "Story": 36, "Task": 30, "Quality": 9,
         "Budget Planned": 15, "Budget Consumed": 16, "Budget Remaining": 17,
         "Saving Planned": 15, "Saving Achived": 15, "Saving Pending": 14,
-        "Date": 13, "Story Points": 13,
+        "Start Date": 13, "Date": 13, "Story Points": 13,
         "Priority": 10, "Assignee": 12, "Status": 13, "Dependencies": 16,
     }
     for col_idx, col_name in enumerate(COLUMNS, start=1):
@@ -144,6 +144,7 @@ def build_template(output_path: str) -> None:
         ("JIRA Dashboard Template — Instructions", True),
         ("", False),
         ("Required columns (do NOT rename or remove these):", True),
+        ("  Client          — Client or customer name (e.g. Acme Corp, Beta Ltd)", False),
         ("  Type            — Ticket type: Story, Task, Bug, Sub-task, Epic", False),
         ("  Project         — Project key or name (e.g. Alpha, Beta)", False),
         ("  Sprint          — Sprint name (e.g. Sprint 1)", False),
@@ -157,7 +158,8 @@ def build_template(output_path: str) -> None:
         ("  Saving Planned  — Planned savings", False),
         ("  Saving Achived  — Achieved savings (note: keep original spelling)", False),
         ("  Saving Pending  — Pending savings", False),
-        ("  Date            — Date in YYYY-MM-DD format", False),
+        ("  Start Date      — Task start date in YYYY-MM-DD format", False),
+        ("  Date            — Task target/due date in YYYY-MM-DD format", False),
         ("  Story Points    — Effort estimate (integer)", False),
         ("  Priority        — High / Medium / Low / Critical", False),
         ("  Assignee        — Person responsible", False),

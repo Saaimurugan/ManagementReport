@@ -927,7 +927,7 @@
 
         .task-details-row {
             display: grid;
-            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 130px 96px;
+            grid-template-columns: 75px 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 80px 80px 130px 96px;
             gap: 8px;
             padding: 12px 20px 12px 85px;
             border-bottom: 1px solid #f1f3f5;
@@ -1029,7 +1029,7 @@
 
         .task-details-header {
             display: grid;
-            grid-template-columns: 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 130px 96px;
+            grid-template-columns: 75px 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 80px 80px 130px 96px;
             gap: 8px;
             padding: 10px 20px 10px 85px;
             background: #f8f9fa;
@@ -1340,7 +1340,7 @@
         @media (max-width: 1200px) {
             .task-details-row,
             .task-details-header {
-                grid-template-columns: repeat(13, minmax(60px, 1fr));
+                grid-template-columns: repeat(15, minmax(60px, 1fr));
                 font-size: 0.8em;
             }
         }
@@ -1434,9 +1434,37 @@
             </div>
         </div>
 
-        <!-- LEVEL 4: Detailed drill-down -->
+        <!-- LEVEL 3: Client View -->
         <div class="section-divider">
             <div class="section-step">3</div>
+            <div class="section-heading">
+                <span class="section-name">Client View</span>
+                <span class="section-desc">Drill down by client: Client → Project → Epic → Story → Task/Bug</span>
+            </div>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="table-container">
+            <button class="expand-all-btn" onclick="toggleAllClientGroups()">
+                <span id="toggleClientBtnText">Expand All</span>
+            </button>
+            <div class="metric-legend">
+                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                <span class="metric-legend-item metric-legend-key">
+                    <span class="metric-chip green">&nbsp;</span> On track
+                    <span class="metric-chip amber">&nbsp;</span> At risk
+                    <span class="metric-chip red">&nbsp;</span> Critical
+                </span>
+            </div>
+            <div class="grouped-view-container" id="clientGroupedTableContainer"></div>
+        </div>
+
+        <!-- LEVEL 4: Detailed drill-down -->
+        <div class="section-divider">
+            <div class="section-step">4</div>
             <div class="section-heading">
                 <span class="section-name">Detailed Task View</span>
                 <span class="section-desc">Drill down: Project → Epic → Story → Task/Bug</span>
@@ -1464,7 +1492,7 @@
 
         <!-- LEVEL 5: Sprint View -->
         <div class="section-divider">
-            <div class="section-step">4</div>
+            <div class="section-step">5</div>
             <div class="section-heading">
                 <span class="section-name">Sprint View</span>
                 <span class="section-desc">Drill down by sprint: Sprint → Project → Epic → Story → Task/Bug</span>
@@ -1492,7 +1520,7 @@
 
         <!-- LEVEL 6: User Performance View -->
         <div class="section-divider">
-            <div class="section-step">5</div>
+            <div class="section-step">6</div>
             <div class="section-heading">
                 <span class="section-name">User Performance</span>
                 <span class="section-desc">Performance metrics by user across all sprints and projects</span>
@@ -1938,10 +1966,66 @@
             return taskRAG;
         }
 
+        // Global metric calculation functions (used by all table views)
+        function calcEfforts(item) {
+            if (item['Budget Remaining'] < 0) return 'red';
+            const planned = item['Budget Planned'] || 0;
+            const consumed = item['Budget Consumed'] || 0;
+            if (planned <= 0) return 'green';
+            const ratio = consumed / planned;
+            if (ratio > 1) return 'red';
+            if (ratio >= 0.9) return 'amber';
+            return 'green';
+        }
+
+        function calcTimeline(item) {
+            if (item.Status === 'Done') {
+                if (item['Actual Completion Date'] && item.Date) {
+                    const actualDate = new Date(item['Actual Completion Date']);
+                    const plannedDate = new Date(item.Date);
+                    
+                    if (!isNaN(actualDate) && !isNaN(plannedDate)) {
+                        const daysDiff = Math.floor((actualDate - plannedDate) / (1000 * 60 * 60 * 24));
+                        if (daysDiff <= 0) return 'green';
+                        if (daysDiff <= 7) return 'amber';
+                        return 'red';
+                    }
+                }
+                return 'green';
+            }
+            const due = new Date(item.Date);
+            if (isNaN(due)) return 'amber';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const daysLeft = Math.floor((due - today) / 86400000);
+            if (daysLeft < 0) return 'red';
+            if (item.Status === 'To Do') return 'amber';
+            if (daysLeft <= 7) return 'amber';
+            return 'green';
+        }
+
+        function calcQuality(item) {
+            return qualityRAG(item.Quality);
+        }
+
+        function calcItemMetrics(item) {
+            return {
+                efforts: calcEfforts(item),
+                timeline: calcTimeline(item),
+                quality: calcQuality(item)
+            };
+        }
+
+        // Alias for consistency across different table views
+        function calcTaskRAG(item) {
+            return computeTaskRAG(item);
+        }
+
         function updateDashboard() {
             updateExecSummary();
             calculateRAGStatus();
             updateMetrics();
+            updateClientTable();
             updateTable();
             updateSprintTable();
             updateUserPerformanceTable();
@@ -2578,6 +2662,7 @@
                                 // Add header row for items
                                 html += `
                                     <div class="task-details-header">
+                                        <div>Client</div>
                                         <div>Task Name</div>
                                         <div>Status</div>
                                         <div>Priority</div>
@@ -2590,6 +2675,7 @@
                                         <div>Savings</div>
                                         <div>Achieved</div>
                                         <div>Pending</div>
+                                        <div>Start Date</div>
                                         <div>Date / Completed</div>
                                         <div>Health (E/T/Q)</div>
                                     </div>
@@ -2600,6 +2686,7 @@
                                     const taskRAG = computeTaskRAG(item);
                                     html += `
                                         <div class="task-details-row task-rag-${taskRAG}">
+                                            <div class="task-cell">${item.Client || ''}</div>
                                             <div class="task-cell">${item.Task || ''}</div>
                                             <div class="task-cell">
                                                 <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
@@ -2616,6 +2703,7 @@
                                             <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                                             <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
                                             <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                                            <div class="task-cell date-cell">${item['Start Date'] || ''}</div>
                                             <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
                                                 const actualDate = new Date(item['Actual Completion Date']);
                                                 const plannedDate = new Date(item.Date);
@@ -2640,6 +2728,7 @@
                             // Add header row for items
                             html += `
                                 <div class="task-details-header">
+                                    <div>Client</div>
                                     <div>Task Name</div>
                                     <div>Status</div>
                                     <div>Priority</div>
@@ -2652,6 +2741,7 @@
                                     <div>Savings</div>
                                     <div>Achieved</div>
                                     <div>Pending</div>
+                                    <div>Start Date</div>
                                     <div>Date / Completed</div>
                                     <div>Health (E/T/Q)</div>
                                 </div>
@@ -2662,6 +2752,7 @@
                                 const taskRAG = computeTaskRAG(item);
                                 html += `
                                     <div class="task-details-row task-rag-${taskRAG}">
+                                        <div class="task-cell">${item.Client || ''}</div>
                                         <div class="task-cell">${item.Task || ''}</div>
                                         <div class="task-cell">
                                             <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
@@ -2678,6 +2769,7 @@
                                         <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                                         <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
                                         <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                                        <div class="task-cell date-cell">${item['Start Date'] || ''}</div>
                                         <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
                                             const actualDate = new Date(item['Actual Completion Date']);
                                             const plannedDate = new Date(item.Date);
@@ -2754,6 +2846,314 @@
                         header.classList.remove('collapsed');
                     } else {
                         header.classList.add('collapsed');
+                    }
+                });
+            });
+            
+            allChildren.forEach(child => {
+                if (allExpanded) {
+                    child.classList.remove('group-collapsed');
+                } else {
+                    child.classList.add('group-collapsed');
+                }
+            });
+        }
+
+        // ===== Client View: drill-down by Client -> Project -> Epic -> Story -> Task/Bug =====
+        function updateClientTable() {
+            try {
+                const container = document.getElementById('clientGroupedTableContainer');
+                
+                console.log('updateClientTable called, filteredData length:', filteredData.length);
+                console.log('Container element:', container);
+                
+                if (!container) {
+                    console.error('ERROR: clientGroupedTableContainer element not found!');
+                    return;
+                }
+                
+                if (filteredData.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <div>No tasks found matching your filters</div>
+                        </div>
+                    `;
+                    return;
+                }
+            
+            // Helper function to safely convert to lowercase
+            const safeLowerCase = (str) => {
+                return str && typeof str === 'string' ? str.toLowerCase() : '';
+            };
+            
+            // Function to calculate RAG status for a task/bug
+            const calculateTaskRAG = (item) => computeTaskRAG(item);
+            
+            // Function to roll up RAG status from child items
+            const rollupRAG = (items) => {
+                if (items.length === 0) return 'green';
+                
+                const ragStatuses = items.map(item => item._ragStatus || calculateTaskRAG(item));
+                
+                if (ragStatuses.includes('red')) return 'red';
+                if (ragStatuses.includes('amber')) return 'amber';
+                return 'green';
+            };
+
+            // Roll a single metric up from child items (worst-case wins)
+            const rollupMetric = (items, key) => {
+                const vals = items.map(i => (i._metrics ? i._metrics[key] : calcItemMetrics(i)[key]));
+                if (vals.includes('red')) return 'red';
+                if (vals.includes('amber')) return 'amber';
+                return 'green';
+            };
+
+            const rollupMetrics = (items) => ({
+                efforts: rollupMetric(items, 'efforts'),
+                timeline: rollupMetric(items, 'timeline'),
+                quality: rollupMetric(items, 'quality')
+            });
+
+            // Render the three colour-coded metric chips (E / T / Q)
+            const renderMetricChips = (m, size) => {
+                const cls = size === 'sm' ? 'metric-chip metric-chip-sm' : 'metric-chip';
+                const one = (label, status, name) =>
+                    `<span class="${cls} ${status}" title="${name}: ${status.toUpperCase()}">${label}</span>`;
+                return '<span class="metric-chips">' +
+                    one('E', m.efforts, 'Efforts') +
+                    one('T', m.timeline, 'Timeline') +
+                    one('Q', m.quality, 'Quality') +
+                    '</span>';
+            };
+
+            // Group data by Client -> Project -> EPIC -> Story -> Type (Task/Bug)
+            const grouped = {};
+            
+            filteredData.forEach(item => {
+                const client = item.Client || 'Unknown Client';
+                const project = item.Project || 'Unknown Project';
+                const epic = item.EPIC || 'Unknown Epic';
+                const story = item.Story || 'Unknown Story';
+                const type = item.Type || 'Unknown Type';
+                
+                if (!grouped[client]) grouped[client] = {};
+                if (!grouped[client][project]) grouped[client][project] = {};
+                if (!grouped[client][project][epic]) grouped[client][project][epic] = {};
+                if (!grouped[client][project][epic][story]) grouped[client][project][epic][story] = {};
+                if (!grouped[client][project][epic][story][type]) grouped[client][project][epic][story][type] = [];
+                
+                grouped[client][project][epic][story][type].push(item);
+            });
+
+            // Render the tasks with the same structure as detailed view
+            const renderTaskRows = (items) => {
+                let h = `
+                    <div class="task-details-header">
+                        <div>Client</div>
+                        <div>Task Name</div>
+                        <div>Status</div>
+                        <div>Priority</div>
+                        <div>Quality</div>
+                        <div>Assignee</div>
+                        <div>Points</div>
+                        <div>Planned (pts)</div>
+                        <div>Consumed (pts)</div>
+                        <div>Remaining (pts)</div>
+                        <div>Savings</div>
+                        <div>Achieved</div>
+                        <div>Pending</div>
+                        <div>Start Date</div>
+                        <div>Date / Completed</div>
+                        <div>Health (E/T/Q)</div>
+                    </div>
+                `;
+                items.forEach(item => {
+                    const taskRAG = calcTaskRAG(item);
+                    const m = item._metrics || calcItemMetrics(item);
+                    h += `
+                        <div class="task-details-row task-rag-${taskRAG}">
+                            <div class="task-cell">${item.Client || ''}</div>
+                            <div class="task-cell">${item.Task || ''}</div>
+                            <div class="task-cell">
+                                <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
+                            </div>
+                            <div class="task-cell priority-${safeLowerCase(item.Priority)}">${item.Priority}</div>
+                            <div class="task-cell quality-rag-${qualityRAG(item.Quality)}">${qualityLabel(item.Quality)}</div>
+                            <div class="task-cell">${item.Assignee}</div>
+                            <div class="task-cell">${item['Story Points']}</div>
+                            <div class="task-cell">${formatPoints(item['Budget Planned'])}</div>
+                            <div class="task-cell">${formatPoints(item['Budget Consumed'])}</div>
+                            <div class="task-cell ${item['Budget Remaining'] >= 0 ? 'positive' : 'negative'}">${formatPoints(item['Budget Remaining'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
+                            <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                            <div class="task-cell date-cell">${item['Start Date'] || ''}</div>
+                            <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
+                                const actualDate = new Date(item['Actual Completion Date']);
+                                const plannedDate = new Date(item.Date);
+                                return (!isNaN(actualDate) && !isNaN(plannedDate) && actualDate > plannedDate) ? '#e53e3e' : '#2f855a';
+                            })()}; font-weight: 600;">→ ${item['Actual Completion Date']}</span>` : `<span style="color: ${(() => {
+                                const plannedDate = new Date(item.Date);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                return (!isNaN(plannedDate) && plannedDate < today) ? '#e53e3e' : '#2d3748';
+                            })()};">${item.Date}</span>`}</div>
+                            <div class="task-cell task-metrics-cell">${renderMetricChips(m, 'sm')}</div>
+                        </div>
+                    `;
+                });
+                return h;
+            };
+
+            let html = '';
+            
+            // Iterate through each client (simplified version showing client -> project -> tasks)
+            Object.keys(grouped).sort().forEach((clientName, cIndex) => {
+                const clientData = grouped[clientName];
+                const clientItems = [];
+                
+                // Collect all items for this client
+                Object.values(clientData).forEach(projectData => {
+                    Object.values(projectData).forEach(epicData => {
+                        Object.values(epicData).forEach(storyData => {
+                            Object.values(storyData).forEach(typeItems => {
+                                clientItems.push(...typeItems);
+                            });
+                        });
+                    });
+                });
+                
+                const clientMetrics = rollupMetrics(clientItems);
+                const clientStats = clientItems.reduce((acc, item) => {
+                    acc.totalTasks++;
+                    acc.points += item['Story Points'] || 0;
+                    acc.budgetPlanned += item['Budget Planned'] || 0;
+                    if (item.Status === 'Done') acc.completedTasks++;
+                    return acc;
+                }, { totalTasks: 0, completedTasks: 0, points: 0, budgetPlanned: 0 });
+                
+                // Client level header
+                html += `
+                    <div class="group-level-1 collapsed" onclick="toggleClientGroup('client-${cIndex}')">
+                        <div class="group-header-content">
+                            <span class="toggle-icon"></span>
+                            <div class="group-title">
+                                <span>👤</span>
+                                <span>${clientName}</span>
+                            </div>
+                        </div>
+                        <div class="group-summary">
+                            <span class="summary-badge">📋 ${clientStats.totalTasks} tasks</span>
+                            <span class="summary-badge">✅ ${clientStats.completedTasks}/${clientStats.totalTasks} done</span>
+                            <span class="summary-badge">💰 ${formatCurrency(clientStats.budgetPlanned)} planned</span>
+                            <span class="summary-badge">📊 ${clientStats.points} pts</span>
+                            ${renderMetricChips(clientMetrics, 'sm')}
+                        </div>
+                    </div>
+                `;
+                
+                html += `<div class="client-${cIndex}-children group-collapsed">`;
+                
+                // Show projects within client
+                Object.keys(clientData).sort().forEach((projectName, pIndex) => {
+                    const projectData = clientData[projectName];
+                    const projectItems = [];
+                    
+                    Object.values(projectData).forEach(epicData => {
+                        Object.values(epicData).forEach(storyData => {
+                            Object.values(storyData).forEach(typeItems => {
+                                projectItems.push(...typeItems);
+                            });
+                        });
+                    });
+                    
+                    const projectMetrics = rollupMetrics(projectItems);
+                    const projectStats = projectItems.reduce((acc, item) => {
+                        acc.totalTasks++;
+                        acc.points += item['Story Points'] || 0;
+                        if (item.Status === 'Done') acc.completedTasks++;
+                        return acc;
+                    }, { totalTasks: 0, completedTasks: 0, points: 0 });
+                    
+                    html += `
+                        <div class="group-level-2 collapsed" onclick="toggleClientGroup('client-${cIndex}-${pIndex}')">
+                            <div class="group-header-content">
+                                <span class="toggle-icon"></span>
+                                <div class="group-title">
+                                    <span>📁</span>
+                                    <span>${projectName}</span>
+                                </div>
+                            </div>
+                            <div class="group-summary">
+                                <span class="summary-badge">📋 ${projectStats.totalTasks} tasks</span>
+                                <span class="summary-badge">✅ ${projectStats.completedTasks} done</span>
+                                <span class="summary-badge">📊 ${projectStats.points} pts</span>
+                                ${renderMetricChips(projectMetrics, 'sm')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    html += `<div class="client-${cIndex}-${pIndex}-children group-collapsed">`;
+                    html += renderTaskRows(projectItems);
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            console.log('updateClientTable: First 200 chars of HTML:', html.substring(0, 200));
+            container.innerHTML = html;
+            console.log('updateClientTable: container.children.length after setting innerHTML:', container.children.length);
+            console.log('✓ updateClientTable completed successfully');
+        } catch (error) {
+            console.error('ERROR in updateClientTable:', error);
+            console.error('Error stack:', error.stack);
+            const container = document.getElementById('clientGroupedTableContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        <h3>Error loading Client View</h3>
+                        <pre>${error.message}\n\n${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+    }
+
+        // Toggle function for client groups
+        function toggleClientGroup(groupId) {
+            const header = document.querySelector(`[onclick="toggleClientGroup('${groupId}')"]`);
+            const container = document.querySelector(`.${groupId}-children`);
+            
+            if (header && container) {
+                header.classList.toggle('collapsed');
+                container.classList.toggle('group-collapsed');
+            }
+        }
+
+        // Toggle all client groups
+        function toggleAllClientGroups() {
+            let allExpanded = window.allClientGroupsExpanded || false;
+            
+            const allLevel1 = document.querySelectorAll('.group-level-1');
+            const allLevel2 = document.querySelectorAll('.group-level-2'); 
+            const allChildren = document.querySelectorAll('[class*="client-"][class$="-children"]');
+            const btnText = document.getElementById('toggleClientBtnText');
+            
+            allExpanded = !allExpanded;
+            window.allClientGroupsExpanded = allExpanded;
+            if (btnText) btnText.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+            
+            [allLevel1, allLevel2].forEach(levels => {
+                levels.forEach(header => {
+                    // Only toggle client view headers
+                    if (header.onclick && header.onclick.toString().includes('toggleClientGroup')) {
+                        if (allExpanded) {
+                            header.classList.remove('collapsed');
+                        } else {
+                            header.classList.add('collapsed');
+                        }
                     }
                 });
             });
@@ -2914,6 +3314,7 @@
             const renderTaskRows = (items) => {
                 let h = `
                     <div class="task-details-header">
+                        <div>Client</div>
                         <div>Task Name</div>
                         <div>Status</div>
                         <div>Priority</div>
@@ -2926,6 +3327,7 @@
                         <div>Savings</div>
                         <div>Achieved</div>
                         <div>Pending</div>
+                        <div>Start Date</div>
                         <div>Date / Completed</div>
                         <div>Health (E/T/Q)</div>
                     </div>
@@ -2935,6 +3337,7 @@
                     const m = item._metrics || calcItemMetrics(item);
                     h += `
                         <div class="task-details-row task-rag-${taskRAG}">
+                            <div class="task-cell">${item.Client || ''}</div>
                             <div class="task-cell">${item.Task || ''}</div>
                             <div class="task-cell">
                                 <span class="status-badge status-${safeLowerCase(item.Status).replace(' ', '')}">${item.Status}</span>
@@ -2949,6 +3352,7 @@
                             <div class="task-cell">${formatCurrency(item['Saving Planned'])}</div>
                             <div class="task-cell">${formatCurrency(item['Saving Achived'])}</div>
                             <div class="task-cell">${formatCurrency(item['Saving Pending'])}</div>
+                            <div class="task-cell date-cell">${item['Start Date'] || ''}</div>
                             <div class="task-cell date-cell">${item.Status === 'Done' && item['Actual Completion Date'] ? `<span style="color: #718096;">${item.Date}</span><br/><span style="color: ${(() => {
                                 const actualDate = new Date(item['Actual Completion Date']);
                                 const plannedDate = new Date(item.Date);
@@ -3957,6 +4361,7 @@
             });
 
             updateTable();
+            updateClientTable();
         }
     </script>
 </body>

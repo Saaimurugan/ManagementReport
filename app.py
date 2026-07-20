@@ -531,6 +531,7 @@ def validate_excel_format(df) -> tuple[bool, list]:
     
     # Define expected columns and their types
     expected_columns = {
+        "Client": "string",
         "Type": "string",
         "Project": "string", 
         "Sprint": "string",
@@ -544,6 +545,7 @@ def validate_excel_format(df) -> tuple[bool, list]:
         "Saving Planned": "numeric",
         "Saving Achived": "numeric",  # Note: keeping original spelling from data
         "Saving Pending": "numeric",
+        "Start Date": "date",
         "Date": "date",
         "Story Points": "numeric",
         "Priority": "string",
@@ -696,6 +698,10 @@ def excel_to_json_memory(file_stream) -> tuple[dict, int]:
         # Handle date conversion more safely
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors='coerce').dt.strftime("%Y-%m-%d")
+        
+        # Handle Start Date conversion
+        if "Start Date" in df.columns:
+            df["Start Date"] = pd.to_datetime(df["Start Date"], errors='coerce').dt.strftime("%Y-%m-%d")
         
         # Handle Actual Completion Date conversion
         if "Actual Completion Date" in df.columns:
@@ -992,23 +998,23 @@ def download_template():
                 
                 # Define comprehensive headers matching the expected format
                 headers = [
-                    "Type", "Project", "Sprint", "EPIC", "Story", "Task",
+                    "Client", "Type", "Project", "Sprint", "EPIC", "Story", "Task",
                     "Quality", "Budget Planned", "Budget Consumed", "Budget Remaining",
                     "Saving Planned", "Saving Achived", "Saving Pending",
-                    "Date", "Actual Completion Date", "Story Points", "Priority", "Assignee", "Person", "Status", "Dependencies"
+                    "Start Date", "Date", "Actual Completion Date", "Story Points", "Priority", "Assignee", "Person", "Status", "Dependencies"
                 ]
                 
                 # Sample realistic data
                 sample_rows = [
-                    ("Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO", 
+                    ("Acme Corp", "Story", "Alpha", "Sprint 1", "User Auth", "Login with SSO", 
                      "Frontend implementation", 0, 3000, 1800, 1200, 400, 200, 200, 
-                     date(2026, 1, 10), date(2026, 1, 8), 3, "High", "Alice", "Alice", "Done", ""),
-                    ("Task", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
+                     date(2026, 1, 5), date(2026, 1, 10), date(2026, 1, 8), 3, "High", "Alice", "Alice", "Done", ""),
+                    ("Acme Corp", "Task", "Alpha", "Sprint 1", "User Auth", "Login with SSO",
                      "Unit tests", 1, 1200, 900, 300, 150, 90, 60,
-                     date(2026, 1, 14), date(2026, 1, 16), 2, "High", "Bob", "Bob", "Done", ""),
-                    ("Story", "Beta", "Sprint 2", "Reporting", "Management dashboard",
+                     date(2026, 1, 8), date(2026, 1, 14), date(2026, 1, 16), 2, "High", "Bob", "Bob", "Done", ""),
+                    ("Beta Ltd", "Story", "Beta", "Sprint 2", "Reporting", "Management dashboard",
                      "Data model", 0, 5000, 3000, 2000, 600, 300, 300,
-                     date(2026, 2, 11), None, 8, "Medium", "Eve", "Eve", "In Progress", ""),
+                     date(2026, 2, 5), date(2026, 2, 11), None, 8, "Medium", "Eve", "Eve", "In Progress", ""),
                 ]
                 
                 # Styles
@@ -1038,16 +1044,16 @@ def download_template():
                         # Format dates
                         if isinstance(value, date):
                             cell.number_format = "YYYY-MM-DD"
-                        elif col_idx in [7, 8, 9, 10, 11, 12, 13, 16]:  # Numeric columns (updated indices)
+                        elif col_idx in [8, 9, 10, 11, 12, 13, 14, 18]:  # Numeric columns (updated indices for new column positions)
                             cell.number_format = "#,##0"
                 
                 # Set column widths
                 col_widths = {
-                    "Type": 10, "Project": 10, "Sprint": 12, "EPIC": 20,
+                    "Client": 15, "Type": 10, "Project": 10, "Sprint": 12, "EPIC": 20,
                     "Story": 36, "Task": 30, "Quality": 9,
                     "Budget Planned": 15, "Budget Consumed": 16, "Budget Remaining": 17,
                     "Saving Planned": 15, "Saving Achived": 15, "Saving Pending": 14,
-                    "Date": 13, "Actual Completion Date": 18, "Story Points": 13,
+                    "Start Date": 13, "Date": 13, "Actual Completion Date": 18, "Story Points": 13,
                     "Priority": 10, "Assignee": 12, "Person": 12, "Status": 13, "Dependencies": 16,
                 }
                 
@@ -1057,24 +1063,24 @@ def download_template():
                 # Add data validation dropdowns
                 last_row = 200  # Allow for many future rows
                 
-                # Type validation
+                # Type validation (now column B, was column A)
                 type_validation = DataValidation(
                     type="list",
                     formula1='"Story,Task,Bug,Epic,Subtask"',
                     allow_blank=True,
                     showDropDown=True
                 )
-                type_validation.sqref = f"A2:A{last_row}"
+                type_validation.sqref = f"B2:B{last_row}"
                 ws.add_data_validation(type_validation)
                 
-                # Priority validation  
+                # Priority validation (now column S, was column Q)
                 priority_validation = DataValidation(
                     type="list",
                     formula1='"Low,Medium,High,Critical,Normal"',
                     allow_blank=True,
                     showDropDown=True
                 )
-                priority_validation.sqref = f"Q2:Q{last_row}"  # Updated column position
+                priority_validation.sqref = f"S2:S{last_row}"  # Updated column position for Priority
                 ws.add_data_validation(priority_validation)
                 
                 # Status validation
@@ -1084,7 +1090,7 @@ def download_template():
                     allow_blank=True,
                     showDropDown=True
                 )
-                status_validation.sqref = f"T2:T{last_row}"  # Updated column position
+                status_validation.sqref = f"V2:V{last_row}"  # Updated column position for Status
                 ws.add_data_validation(status_validation)
                 
                 # Freeze header row and add auto-filter
@@ -1099,6 +1105,7 @@ def download_template():
                     ("JIRA Dashboard Template — Instructions", True),
                     ("", False),
                     ("Required columns (do NOT rename or remove these):", True),
+                    ("  Client          — Client or customer name (e.g. Acme Corp, Beta Ltd)", False),
                     ("  Type            — Ticket type: Story, Task, Bug, Epic, Subtask", False),
                     ("  Project         — Project key or name (e.g. Alpha, Beta)", False),
                     ("  Sprint          — Sprint name (e.g. Sprint 1)", False),
@@ -1112,6 +1119,7 @@ def download_template():
                     ("  Saving Planned  — Planned monetary savings", False),
                     ("  Saving Achived  — Achieved monetary savings (note: original spelling)", False),
                     ("  Saving Pending  — Pending monetary savings", False),
+                    ("  Start Date      — Task start date in YYYY-MM-DD format", False),
                     ("  Date            — Planned completion date (YYYY-MM-DD format)", False),
                     ("  Actual Completion Date — Actual completion date for Done tasks (YYYY-MM-DD)", False),
                     ("  Story Points    — Effort estimate (integer)", False),
