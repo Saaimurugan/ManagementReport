@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VP Technology - Project Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1025,6 +1026,54 @@
         .metric-legend-key {
             gap: 6px;
             margin-left: auto;
+        }
+
+        /* Gantt Chart Styles */
+        .gantt-container {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .gantt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .gantt-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gantt-canvas-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .gantt-toggle-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .gantt-toggle-btn:hover {
+            background: #3182ce;
         }
 
         .task-details-header {
@@ -2366,6 +2415,204 @@
             charts[chartId] = new Chart(ctx, config);
         }
 
+        // ===== Gantt Chart Functions =====
+        function generateGanttChart(items, containerId, groupName) {
+            if (!items || items.length === 0) return '';
+            
+            // Filter items with valid dates
+            const validItems = items.filter(item => item['Start Date'] && item.Date);
+            if (validItems.length === 0) return '';
+            
+            const chartId = `gantt-${containerId}`;
+            
+            return `
+                <div class="gantt-container" id="gantt-container-${containerId}">
+                    <div class="gantt-header">
+                        <div class="gantt-title">
+                            📅 ${groupName} Timeline
+                        </div>
+                        <button class="gantt-toggle-btn" onclick="toggleGantt('${containerId}')">
+                            Hide Chart
+                        </button>
+                    </div>
+                    <div class="gantt-canvas-wrapper" id="gantt-wrapper-${containerId}">
+                        <canvas id="${chartId}" style="max-height: ${Math.max(200, validItems.length * 30)}px;"></canvas>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createGanttChart(items, chartId, groupName) {
+            const canvas = document.getElementById(chartId);
+            if (!canvas) return;
+            
+            // Filter and prepare data
+            const validItems = items.filter(item => item['Start Date'] && item.Date);
+            if (validItems.length === 0) return;
+            
+            // Sort by start date
+            validItems.sort((a, b) => new Date(a['Start Date']) - new Date(b['Start Date']));
+            
+            // Limit to top 20 items for better visibility
+            const displayItems = validItems.slice(0, 20);
+            
+            // Prepare chart data
+            const chartData = displayItems.map((item, index) => {
+                const startDate = new Date(item['Start Date']);
+                const endDate = item.Status === 'Done' && item['Actual Completion Date'] 
+                    ? new Date(item['Actual Completion Date'])
+                    : new Date(item.Date);
+                
+                // Determine color based on status
+                let color;
+                if (item.Status === 'Done') {
+                    color = '#48bb78'; // Green
+                } else if (item.Status === 'In Progress') {
+                    color = '#4299e1'; // Blue
+                } else if (item.Status === 'Blocked') {
+                    color = '#e53e3e'; // Red
+                } else {
+                    color = '#a0aec0'; // Gray
+                }
+                
+                return {
+                    x: [startDate, endDate],
+                    y: index,
+                    backgroundColor: color,
+                    borderColor: color,
+                    label: item.Task || item.Story || item.EPIC || 'Unknown'
+                };
+            });
+            
+            // Create chart
+            const ctx = canvas.getContext('2d');
+            const ganttChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: displayItems.map((item, idx) => {
+                        const label = item.Task || item.Story || item.EPIC || 'Unknown';
+                        return label.length > 25 ? label.substring(0, 25) + '...' : label;
+                    }),
+                    datasets: [{
+                        label: 'Timeline',
+                        data: chartData.map(d => d.x),
+                        backgroundColor: chartData.map(d => d.backgroundColor),
+                        borderColor: chartData.map(d => d.borderColor),
+                        borderWidth: 2,
+                        borderSkipped: false,
+                        barThickness: 18,
+                        minBarLength: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const item = displayItems[context[0].dataIndex];
+                                    return item.Task || item.Story || item.EPIC || 'Unknown';
+                                },
+                                label: function(context) {
+                                    const item = displayItems[context.dataIndex];
+                                    const start = new Date(item['Start Date']).toLocaleDateString();
+                                    const end = item.Status === 'Done' && item['Actual Completion Date']
+                                        ? new Date(item['Actual Completion Date']).toLocaleDateString()
+                                        : new Date(item.Date).toLocaleDateString();
+                                    const duration = Math.ceil((new Date(item.Date) - new Date(item['Start Date'])) / (1000 * 60 * 60 * 24));
+                                    
+                                    return [
+                                        `Status: ${item.Status}`,
+                                        `Start: ${start}`,
+                                        `End: ${end}`,
+                                        `Duration: ${duration} days`,
+                                        `Assignee: ${item.Assignee || 'Unassigned'}`,
+                                        `Priority: ${item.Priority || 'N/A'}`
+                                    ];
+                                },
+                                afterLabel: function(context) {
+                                    const item = displayItems[context.dataIndex];
+                                    return `Story Points: ${item['Story Points'] || 0}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM dd',
+                                    week: 'MMM dd',
+                                    month: 'MMM yyyy'
+                                },
+                                tooltipFormat: 'MMM dd, yyyy'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Timeline',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: '#e2e8f0',
+                                drawBorder: true,
+                                drawTicks: true
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Tasks',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Store chart for later destruction if needed
+            charts[chartId] = ganttChart;
+        }
+
+        function toggleGantt(containerId) {
+            const wrapper = document.getElementById(`gantt-wrapper-${containerId}`);
+            const btn = document.querySelector(`#gantt-container-${containerId} .gantt-toggle-btn`);
+            
+            if (wrapper && btn) {
+                if (wrapper.style.display === 'none') {
+                    wrapper.style.display = 'block';
+                    btn.textContent = 'Hide Chart';
+                } else {
+                    wrapper.style.display = 'none';
+                    btn.textContent = 'Show Chart';
+                }
+            }
+        }
+
         function updateTable() {
             const container = document.getElementById('groupedTableContainer');
             
@@ -2540,6 +2787,9 @@
                 `;
                 
                 html += `<div class="project-${pIndex}-children group-collapsed">`;
+                
+                // Add Gantt chart for project
+                html += generateGanttChart(projectTasks, `project-${pIndex}`, project);
                 
                 Object.keys(projectData).sort().forEach((epic, eIndex) => {
                     const epicData = projectData[epic];
@@ -2790,6 +3040,19 @@
             console.log('updateTable: First 200 chars of HTML:', html.substring(0, 200));
             container.innerHTML = html;
             console.log('updateTable: container.children.length after setting innerHTML:', container.children.length);
+            
+            // Create Gantt charts for each project after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).forEach((project, pIndex) => {
+                    const projectData = grouped[project];
+                    const projectTasks = Object.values(projectData).flatMap(epic => 
+                        Object.values(epic).flatMap(story => 
+                            Object.values(story).flat()
+                        )
+                    );
+                    createGanttChart(projectTasks, `gantt-project-${pIndex}`, project);
+                });
+            }, 100);
         }
         
         function calculateGroupStats(items) {
@@ -3046,6 +3309,9 @@
                 
                 html += `<div class="client-${cIndex}-children group-collapsed">`;
                 
+                // Add Gantt chart for client
+                html += generateGanttChart(clientItems, `client-${cIndex}`, clientName);
+                
                 // Show projects within client
                 Object.keys(clientData).sort().forEach((projectName, pIndex) => {
                     const projectData = clientData[projectName];
@@ -3097,6 +3363,26 @@
             container.innerHTML = html;
             console.log('updateClientTable: container.children.length after setting innerHTML:', container.children.length);
             console.log('✓ updateClientTable completed successfully');
+            
+            // Create Gantt charts for each client after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).forEach((clientName, cIndex) => {
+                    const clientData = grouped[clientName];
+                    const clientItems = [];
+                    
+                    Object.values(clientData).forEach(projectData => {
+                        Object.values(projectData).forEach(epicData => {
+                            Object.values(epicData).forEach(storyData => {
+                                Object.values(storyData).forEach(typeItems => {
+                                    clientItems.push(...typeItems);
+                                });
+                            });
+                        });
+                    });
+                    
+                    createGanttChart(clientItems, `gantt-client-${cIndex}`, clientName);
+                });
+            }, 100);
         } catch (error) {
             console.error('ERROR in updateClientTable:', error);
             console.error('Error stack:', error.stack);
@@ -3393,6 +3679,9 @@
 
                 // Add burndown chart for this sprint
                 html += generateSprintBurndownChart(sprint, sprintItems, sprintId);
+                
+                // Add Gantt chart for this sprint
+                html += generateGanttChart(sprintItems, sprintId, sprint);
 
                 Object.keys(sprintProjects).sort().forEach((project, pi) => {
                     const projEpics = sprintProjects[project];
@@ -3435,6 +3724,16 @@
                 const sprintId = `sp-${si}`;
                 createSprintBurndownChart(sprint, sprintItems, sprintId);
             });
+            
+            // Create Gantt charts for each sprint after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).sort(sprintSort).forEach((sprint, si) => {
+                    const sprintItems = Object.values(grouped[sprint]).flatMap(pr =>
+                        Object.values(pr).flatMap(ep => Object.values(ep).flat()));
+                    const sprintId = `sp-${si}`;
+                    createGanttChart(sprintItems, `gantt-${sprintId}`, sprint);
+                });
+            }, 100);
         }
 
         let sprintAllExpanded = false;

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VP Technology - Project Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1027,6 +1028,54 @@
             margin-left: auto;
         }
 
+        /* Gantt Chart Styles */
+        .gantt-container {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .gantt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .gantt-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gantt-canvas-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .gantt-toggle-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .gantt-toggle-btn:hover {
+            background: #3182ce;
+        }
+
         .task-details-header {
             display: grid;
             grid-template-columns: 75px 60px 80px 70px 70px 80px 50px 70px 70px 70px 70px 70px 70px 80px 80px 130px 96px;
@@ -1175,7 +1224,7 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         .user-performance-table thead {
@@ -1215,6 +1264,12 @@
         .user-performance-table td.user-name {
             font-weight: 600;
             color: #2d3748;
+        }
+
+        .group-children {
+            background: white;
+            padding: 0;
+            margin-bottom: 2px;
         }
 
         .performance-metric {
@@ -1523,7 +1578,7 @@
             <div class="section-step">6</div>
             <div class="section-heading">
                 <span class="section-name">User Performance</span>
-                <span class="section-desc">Performance metrics by user across all sprints and projects</span>
+                <span class="section-desc">Performance metrics by user, grouped by sprint</span>
             </div>
             <div class="section-line"></div>
         </div>
@@ -2375,6 +2430,204 @@
             charts[chartId] = new Chart(ctx, config);
         }
 
+        // ===== Gantt Chart Functions =====
+        function generateGanttChart(items, containerId, groupName) {
+            if (!items || items.length === 0) return '';
+            
+            // Filter items with valid dates
+            const validItems = items.filter(item => item['Start Date'] && item.Date);
+            if (validItems.length === 0) return '';
+            
+            const chartId = `gantt-${containerId}`;
+            
+            return `
+                <div class="gantt-container" id="gantt-container-${containerId}">
+                    <div class="gantt-header">
+                        <div class="gantt-title">
+                            📅 ${groupName} Timeline
+                        </div>
+                        <button class="gantt-toggle-btn" onclick="toggleGantt('${containerId}')">
+                            Hide Chart
+                        </button>
+                    </div>
+                    <div class="gantt-canvas-wrapper" id="gantt-wrapper-${containerId}">
+                        <canvas id="${chartId}" style="max-height: ${Math.max(200, validItems.length * 30)}px;"></canvas>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createGanttChart(items, chartId, groupName) {
+            const canvas = document.getElementById(chartId);
+            if (!canvas) return;
+            
+            // Filter and prepare data
+            const validItems = items.filter(item => item['Start Date'] && item.Date);
+            if (validItems.length === 0) return;
+            
+            // Sort by start date
+            validItems.sort((a, b) => new Date(a['Start Date']) - new Date(b['Start Date']));
+            
+            // Limit to top 20 items for better visibility
+            const displayItems = validItems.slice(0, 20);
+            
+            // Prepare chart data
+            const chartData = displayItems.map((item, index) => {
+                const startDate = new Date(item['Start Date']);
+                const endDate = item.Status === 'Done' && item['Actual Completion Date'] 
+                    ? new Date(item['Actual Completion Date'])
+                    : new Date(item.Date);
+                
+                // Determine color based on status
+                let color;
+                if (item.Status === 'Done') {
+                    color = '#48bb78'; // Green
+                } else if (item.Status === 'In Progress') {
+                    color = '#4299e1'; // Blue
+                } else if (item.Status === 'Blocked') {
+                    color = '#e53e3e'; // Red
+                } else {
+                    color = '#a0aec0'; // Gray
+                }
+                
+                return {
+                    x: [startDate, endDate],
+                    y: index,
+                    backgroundColor: color,
+                    borderColor: color,
+                    label: item.Task || item.Story || item.EPIC || 'Unknown'
+                };
+            });
+            
+            // Create chart
+            const ctx = canvas.getContext('2d');
+            const ganttChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: displayItems.map((item, idx) => {
+                        const label = item.Task || item.Story || item.EPIC || 'Unknown';
+                        return label.length > 25 ? label.substring(0, 25) + '...' : label;
+                    }),
+                    datasets: [{
+                        label: 'Timeline',
+                        data: chartData.map(d => d.x),
+                        backgroundColor: chartData.map(d => d.backgroundColor),
+                        borderColor: chartData.map(d => d.borderColor),
+                        borderWidth: 2,
+                        borderSkipped: false,
+                        barThickness: 18,
+                        minBarLength: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const item = displayItems[context[0].dataIndex];
+                                    return item.Task || item.Story || item.EPIC || 'Unknown';
+                                },
+                                label: function(context) {
+                                    const item = displayItems[context.dataIndex];
+                                    const start = new Date(item['Start Date']).toLocaleDateString();
+                                    const end = item.Status === 'Done' && item['Actual Completion Date']
+                                        ? new Date(item['Actual Completion Date']).toLocaleDateString()
+                                        : new Date(item.Date).toLocaleDateString();
+                                    const duration = Math.ceil((new Date(item.Date) - new Date(item['Start Date'])) / (1000 * 60 * 60 * 24));
+                                    
+                                    return [
+                                        `Status: ${item.Status}`,
+                                        `Start: ${start}`,
+                                        `End: ${end}`,
+                                        `Duration: ${duration} days`,
+                                        `Assignee: ${item.Assignee || 'Unassigned'}`,
+                                        `Priority: ${item.Priority || 'N/A'}`
+                                    ];
+                                },
+                                afterLabel: function(context) {
+                                    const item = displayItems[context.dataIndex];
+                                    return `Story Points: ${item['Story Points'] || 0}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM dd',
+                                    week: 'MMM dd',
+                                    month: 'MMM yyyy'
+                                },
+                                tooltipFormat: 'MMM dd, yyyy'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Timeline',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: '#e2e8f0',
+                                drawBorder: true,
+                                drawTicks: true
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Tasks',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Store chart for later destruction if needed
+            charts[chartId] = ganttChart;
+        }
+
+        function toggleGantt(containerId) {
+            const wrapper = document.getElementById(`gantt-wrapper-${containerId}`);
+            const btn = document.querySelector(`#gantt-container-${containerId} .gantt-toggle-btn`);
+            
+            if (wrapper && btn) {
+                if (wrapper.style.display === 'none') {
+                    wrapper.style.display = 'block';
+                    btn.textContent = 'Hide Chart';
+                } else {
+                    wrapper.style.display = 'none';
+                    btn.textContent = 'Show Chart';
+                }
+            }
+        }
+
         function updateTable() {
             const container = document.getElementById('groupedTableContainer');
             
@@ -2549,6 +2802,9 @@
                 `;
                 
                 html += `<div class="project-${pIndex}-children group-collapsed">`;
+                
+                // Add Gantt chart for project
+                html += generateGanttChart(projectTasks, `project-${pIndex}`, project);
                 
                 Object.keys(projectData).sort().forEach((epic, eIndex) => {
                     const epicData = projectData[epic];
@@ -2799,6 +3055,19 @@
             console.log('updateTable: First 200 chars of HTML:', html.substring(0, 200));
             container.innerHTML = html;
             console.log('updateTable: container.children.length after setting innerHTML:', container.children.length);
+            
+            // Create Gantt charts for each project after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).forEach((project, pIndex) => {
+                    const projectData = grouped[project];
+                    const projectTasks = Object.values(projectData).flatMap(epic => 
+                        Object.values(epic).flatMap(story => 
+                            Object.values(story).flat()
+                        )
+                    );
+                    createGanttChart(projectTasks, `gantt-project-${pIndex}`, project);
+                });
+            }, 100);
         }
         
         function calculateGroupStats(items) {
@@ -3055,6 +3324,9 @@
                 
                 html += `<div class="client-${cIndex}-children group-collapsed">`;
                 
+                // Add Gantt chart for client
+                html += generateGanttChart(clientItems, `client-${cIndex}`, clientName);
+                
                 // Show projects within client
                 Object.keys(clientData).sort().forEach((projectName, pIndex) => {
                     const projectData = clientData[projectName];
@@ -3106,6 +3378,26 @@
             container.innerHTML = html;
             console.log('updateClientTable: container.children.length after setting innerHTML:', container.children.length);
             console.log('✓ updateClientTable completed successfully');
+            
+            // Create Gantt charts for each client after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).forEach((clientName, cIndex) => {
+                    const clientData = grouped[clientName];
+                    const clientItems = [];
+                    
+                    Object.values(clientData).forEach(projectData => {
+                        Object.values(projectData).forEach(epicData => {
+                            Object.values(epicData).forEach(storyData => {
+                                Object.values(storyData).forEach(typeItems => {
+                                    clientItems.push(...typeItems);
+                                });
+                            });
+                        });
+                    });
+                    
+                    createGanttChart(clientItems, `gantt-client-${cIndex}`, clientName);
+                });
+            }, 100);
         } catch (error) {
             console.error('ERROR in updateClientTable:', error);
             console.error('Error stack:', error.stack);
@@ -3402,6 +3694,9 @@
 
                 // Add burndown chart for this sprint
                 html += generateSprintBurndownChart(sprint, sprintItems, sprintId);
+                
+                // Add Gantt chart for this sprint
+                html += generateGanttChart(sprintItems, sprintId, sprint);
 
                 Object.keys(sprintProjects).sort().forEach((project, pi) => {
                     const projEpics = sprintProjects[project];
@@ -3444,6 +3739,16 @@
                 const sprintId = `sp-${si}`;
                 createSprintBurndownChart(sprint, sprintItems, sprintId);
             });
+            
+            // Create Gantt charts for each sprint after DOM is ready
+            setTimeout(() => {
+                Object.keys(grouped).sort(sprintSort).forEach((sprint, si) => {
+                    const sprintItems = Object.values(grouped[sprint]).flatMap(pr =>
+                        Object.values(pr).flatMap(ep => Object.values(ep).flat()));
+                    const sprintId = `sp-${si}`;
+                    createGanttChart(sprintItems, `gantt-${sprintId}`, sprint);
+                });
+            }, 100);
         }
 
         let sprintAllExpanded = false;
@@ -3467,29 +3772,28 @@
             const container = document.getElementById('userPerformanceContainer');
             if (!container) return;
 
-            // Group data by user (Assignee)
-            const userStats = {};
+            // Group data by Sprint, then by User
+            const sprintUserStats = {};
             
             filteredData.forEach(item => {
-                const user = item.Assignee || 'Unassigned';
                 const sprint = item.Sprint || 'No Sprint';
+                const user = item.Assignee || 'Unassigned';
                 
-                if (!userStats[user]) {
-                    userStats[user] = {
-                        sprints: new Set(),
+                if (!sprintUserStats[sprint]) {
+                    sprintUserStats[sprint] = {};
+                }
+                
+                if (!sprintUserStats[sprint][user]) {
+                    sprintUserStats[sprint][user] = {
                         totalSavings: 0,
                         totalBugs: 0,
                         totalStoryPoints: 0,
                         totalTasks: 0,
-                        onTimeTasks: 0,
-                        sprintDetails: {}
+                        onTimeTasks: 0
                     };
                 }
 
-                const userStat = userStats[user];
-                
-                // Add sprint
-                userStat.sprints.add(sprint);
+                const userStat = sprintUserStats[sprint][user];
                 
                 // Add savings (Saving Achived)
                 userStat.totalSavings += (item['Saving Achived'] || 0);
@@ -3519,57 +3823,6 @@
                 }
             });
 
-            // Convert to array and calculate metrics
-            const userPerformanceData = Object.keys(userStats).map(user => {
-                const stats = userStats[user];
-                const sprintCount = stats.sprints.size;
-                const sprintCapacity = sprintCount * 30; // 30 points per sprint
-                
-                // Efficiency: (Story points / sprint capacity) * 100
-                const efficiency = sprintCapacity > 0 ? (stats.totalStoryPoints / sprintCapacity) * 100 : 0;
-                
-                // OnTime: (Tasks completed on time / total tasks) * 100
-                const onTimePercentage = stats.totalTasks > 0 ? (stats.onTimeTasks / stats.totalTasks) * 100 : 0;
-                
-                // Bugs: (Total bugs / total tasks) * 100
-                const bugPercentage = stats.totalTasks > 0 ? (stats.totalBugs / stats.totalTasks) * 100 : 0;
-                
-                return {
-                    user,
-                    sprintCount,
-                    totalSavings: stats.totalSavings,
-                    totalBugs: stats.totalBugs,
-                    totalTasks: stats.totalTasks,
-                    totalStoryPoints: stats.totalStoryPoints,
-                    sprintCapacity,
-                    onTimeTasks: stats.onTimeTasks,
-                    efficiency: Math.round(efficiency * 10) / 10, // Round to 1 decimal
-                    onTimePercentage: Math.round(onTimePercentage * 10) / 10, // Round to 1 decimal
-                    bugPercentage: Math.round(bugPercentage * 10) / 10 // Round to 1 decimal
-                };
-            });
-
-            // Sort by performance metrics (best performers first)
-            userPerformanceData.sort((a, b) => {
-                // Primary sort: OnTime percentage (higher is better)
-                if (b.onTimePercentage !== a.onTimePercentage) {
-                    return b.onTimePercentage - a.onTimePercentage;
-                }
-                
-                // Secondary sort: Efficiency percentage (higher is better)
-                if (b.efficiency !== a.efficiency) {
-                    return b.efficiency - a.efficiency;
-                }
-                
-                // Tertiary sort: Bug percentage (lower is better)
-                if (a.bugPercentage !== b.bugPercentage) {
-                    return a.bugPercentage - b.bugPercentage;
-                }
-                
-                // Final sort: Total savings (higher is better)
-                return b.totalSavings - a.totalSavings;
-            });
-
             // Helper function to get performance class based on value and type
             const getPerformanceClass = (value, type) => {
                 if (type === 'efficiency') {
@@ -3591,49 +3844,135 @@
                 return 'good';
             };
 
-            // Generate HTML table
-            let html = `
-                <table class="user-performance-table">
-                    <thead>
-                        <tr>
-                            <th>User Name</th>
-                            <th class="text-center">Sprints</th>
-                            <th class="text-center">Savings</th>
-                            <th class="text-center">Bugs</th>
-                            <th class="text-center">Efficiency (%)</th>
-                            <th class="text-center">OnTime (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            // Generate HTML with grouped view
+            let html = '<div class="grouped-view-container">';
 
-            userPerformanceData.forEach(userData => {
-                const efficiencyClass = getPerformanceClass(userData.efficiency, 'efficiency');
-                const onTimeClass = getPerformanceClass(userData.onTimePercentage, 'ontime');
-                const bugsClass = getPerformanceClass(userData.bugPercentage, 'bugs');
+            // Sort sprints
+            const sprints = Object.keys(sprintUserStats).sort();
+
+            sprints.forEach((sprint, sprintIndex) => {
+                const users = sprintUserStats[sprint];
+                const sprintId = `user-perf-sprint-${sprintIndex}`;
+                
+                // Calculate sprint totals
+                let sprintTotalSavings = 0;
+                let sprintTotalBugs = 0;
+                let sprintTotalStoryPoints = 0;
+                let sprintTotalTasks = 0;
+                let sprintOnTimeTasks = 0;
+                
+                Object.values(users).forEach(userStat => {
+                    sprintTotalSavings += userStat.totalSavings;
+                    sprintTotalBugs += userStat.totalBugs;
+                    sprintTotalStoryPoints += userStat.totalStoryPoints;
+                    sprintTotalTasks += userStat.totalTasks;
+                    sprintOnTimeTasks += userStat.onTimeTasks;
+                });
+                
+                const sprintCapacity = Object.keys(users).length * 30; // 30 points per user
+                const sprintEfficiency = sprintCapacity > 0 ? Math.round((sprintTotalStoryPoints / sprintCapacity) * 1000) / 10 : 0;
+                const sprintOnTimePercentage = sprintTotalTasks > 0 ? Math.round((sprintOnTimeTasks / sprintTotalTasks) * 1000) / 10 : 0;
+                const sprintBugPercentage = sprintTotalTasks > 0 ? Math.round((sprintTotalBugs / sprintTotalTasks) * 1000) / 10 : 0;
+
+                // Sprint header
+                html += `
+                    <div class="group-level-1 collapsed" onclick="toggleGroup('${sprintId}', event)">
+                        <div class="group-header-content">
+                            <span class="toggle-icon">▶</span>
+                            <span class="group-title">
+                                <strong>${sprint}</strong>
+                            </span>
+                        </div>
+                        <div class="group-summary">
+                            <span class="summary-badge">👥 ${Object.keys(users).length} Users</span>
+                            <span class="summary-badge">💰 ${formatCurrency(sprintTotalSavings)}</span>
+                            <span class="summary-badge">📊 ${sprintTotalStoryPoints} pts</span>
+                            <span class="summary-badge">⏱️ ${sprintOnTimePercentage}% OnTime</span>
+                        </div>
+                    </div>
+                `;
+
+                // User rows for this sprint (hidden by default)
+                html += `<div class="${sprintId}-children group-collapsed">`;
+                html += `
+                    <table class="user-performance-table">
+                        <thead>
+                            <tr>
+                                <th>User Name</th>
+                                <th class="text-center">Savings</th>
+                                <th class="text-center">Bugs</th>
+                                <th class="text-center">Efficiency (%)</th>
+                                <th class="text-center">OnTime (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                // Sort users by performance
+                const userArray = Object.keys(users).map(user => {
+                    const stats = users[user];
+                    const userCapacity = 30; // 30 points per sprint per user
+                    
+                    // Efficiency: (Story points / capacity) * 100
+                    const efficiency = userCapacity > 0 ? (stats.totalStoryPoints / userCapacity) * 100 : 0;
+                    
+                    // OnTime: (Tasks completed on time / total tasks) * 100
+                    const onTimePercentage = stats.totalTasks > 0 ? (stats.onTimeTasks / stats.totalTasks) * 100 : 0;
+                    
+                    // Bugs: (Total bugs / total tasks) * 100
+                    const bugPercentage = stats.totalTasks > 0 ? (stats.totalBugs / stats.totalTasks) * 100 : 0;
+                    
+                    return {
+                        user,
+                        ...stats,
+                        userCapacity,
+                        efficiency: Math.round(efficiency * 10) / 10,
+                        onTimePercentage: Math.round(onTimePercentage * 10) / 10,
+                        bugPercentage: Math.round(bugPercentage * 10) / 10
+                    };
+                }).sort((a, b) => {
+                    // Sort by OnTime percentage (higher is better)
+                    if (b.onTimePercentage !== a.onTimePercentage) {
+                        return b.onTimePercentage - a.onTimePercentage;
+                    }
+                    // Then by efficiency
+                    if (b.efficiency !== a.efficiency) {
+                        return b.efficiency - a.efficiency;
+                    }
+                    // Then by bugs (lower is better)
+                    return a.bugPercentage - b.bugPercentage;
+                });
+
+                userArray.forEach(userData => {
+                    const efficiencyClass = getPerformanceClass(userData.efficiency, 'efficiency');
+                    const onTimeClass = getPerformanceClass(userData.onTimePercentage, 'ontime');
+                    const bugsClass = getPerformanceClass(userData.bugPercentage, 'bugs');
+
+                    html += `
+                        <tr>
+                            <td class="user-name">${userData.user}</td>
+                            <td class="text-center">${formatCurrency(userData.totalSavings)}</td>
+                            <td class="text-center">
+                                <span class="performance-metric ${bugsClass}">${userData.totalBugs}/${userData.totalTasks} (${userData.bugPercentage}%)</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="performance-metric ${efficiencyClass}">${userData.totalStoryPoints}/${userData.userCapacity} (${userData.efficiency}%)</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="performance-metric ${onTimeClass}">${userData.onTimeTasks}/${userData.totalTasks} (${userData.onTimePercentage}%)</span>
+                            </td>
+                        </tr>
+                    `;
+                });
 
                 html += `
-                    <tr>
-                        <td class="user-name">${userData.user}</td>
-                        <td class="text-center">${userData.sprintCount}</td>
-                        <td class="text-center">${formatCurrency(userData.totalSavings)}</td>
-                        <td class="text-center">
-                            <span class="performance-metric ${bugsClass}">${userData.totalBugs}/${userData.totalTasks} (${userData.bugPercentage}%)</span>
-                        </td>
-                        <td class="text-center">
-                            <span class="performance-metric ${efficiencyClass}">${userData.totalStoryPoints}/${userData.sprintCapacity} (${userData.efficiency}%)</span>
-                        </td>
-                        <td class="text-center">
-                            <span class="performance-metric ${onTimeClass}">${userData.onTimeTasks}/${userData.totalTasks} (${userData.onTimePercentage}%)</span>
-                        </td>
-                    </tr>
+                        </tbody>
+                    </table>
                 `;
+                html += '</div>'; // Close sprint-children
             });
 
-            html += `
-                    </tbody>
-                </table>
-            `;
+            html += '</div>'; // Close grouped-view-container
 
             container.innerHTML = html;
         }

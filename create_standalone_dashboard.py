@@ -25,11 +25,11 @@ loader_pattern = re.compile(
     re.DOTALL,
 )
 
-# Embed the data directly. json.dumps emits NaN by default, which is valid
-# JavaScript (the dashboard recomputes derived fields on load anyway).
+# Embed the data directly. Use ensure_ascii=False to properly handle Unicode
+# and special characters. json.dumps will properly escape all characters for JSON.
 embedded_code = (
     "        // Load data (embedded)\n"
-    "        allData = " + json.dumps(data) + ";\n"
+    "        allData = " + json.dumps(data, ensure_ascii=False) + ";\n"
     "                initializeDashboard();"
 )
 

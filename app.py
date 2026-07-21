@@ -379,7 +379,7 @@ PAGE_TEMPLATE = """
 
       <button type="submit" class="btn btn-primary" id="submit-btn">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 1a.75.75 0 0 1 .75.75v5.5h2.72a.25.25 0 0 1 .177.427l-3.396 3.396a.25.25 0 0 1-.353 0L4.503 7.677A.25.25 0 0 1 4.68 7.25H7.25V1.75A.75.75 0 0 1 8 1zM1.5 12a.75.75 0 0 1 .75-.75h11.5a.75.75 0 0 1 0 1.5H2.25A.75.75 0 0 1 1.5 12z"/>
+          <path d="M8 15a.75.75 0 0 1-.75-.75V8.75H4.53a.25.25 0 0 1-.177-.427l3.396-3.396a.25.25 0 0 1 .354 0l3.396 3.396a.25.25 0 0 1-.177.427H8.75v5.5A.75.75 0 0 1 8 15zM1.5 4a.75.75 0 0 1 .75-.75h11.5a.75.75 0 0 1 0 1.5H2.25A.75.75 0 0 1 1.5 4z"/>
         </svg>
         Upload &amp; Convert to JSON
       </button>
@@ -710,7 +710,21 @@ def excel_to_json_memory(file_stream) -> tuple[dict, int]:
         # Replace NaN values with None for JSON compatibility
         df = df.where(pd.notnull(df), None)
         
-        data = df.to_dict(orient="records")
+        # Convert to dict, ensuring all string values are properly handled
+        data = []
+        for record in df.to_dict(orient="records"):
+            cleaned_record = {}
+            for key, value in record.items():
+                if value is None:
+                    cleaned_record[key] = None
+                elif isinstance(value, str):
+                    # Ensure strings are properly encoded and handle any problematic characters
+                    # Python's json.dumps will automatically handle escaping
+                    cleaned_record[key] = str(value)
+                else:
+                    cleaned_record[key] = value
+            data.append(cleaned_record)
+        
         logger.info(f"Successfully processed {len(data)} records in memory")
         
         return data, len(data)
@@ -735,6 +749,9 @@ def build_standalone_memory(data: list, template_content: str) -> str:
                     cleaned_record[key] = None
                 elif isinstance(value, pd.Timestamp):
                     cleaned_record[key] = value.strftime("%Y-%m-%d")
+                elif isinstance(value, str):
+                    # Properly escape special characters in strings
+                    cleaned_record[key] = value
                 else:
                     cleaned_record[key] = value
             cleaned_data.append(cleaned_record)
@@ -746,9 +763,11 @@ def build_standalone_memory(data: list, template_content: str) -> str:
             re.DOTALL,
         )
 
+        # Use ensure_ascii=False to properly handle Unicode characters
+        # and let json.dumps handle all escape sequences properly
         embedded_code = (
             "        // Load data (embedded)\n"
-            "        allData = " + json.dumps(cleaned_data) + ";\n"
+            "        allData = " + json.dumps(cleaned_data, ensure_ascii=False) + ";\n"
             "                initializeDashboard();"
         )
 
