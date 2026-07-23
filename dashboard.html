@@ -62,12 +62,180 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            position: relative;
         }
 
         .filter-group label {
             font-weight: 600;
             color: #4a5568;
             font-size: 0.9em;
+        }
+
+        /* Override for multi-select option labels specifically */
+        .multi-select-option label {
+            font-weight: normal !important;
+            color: #2d3748 !important;
+            font-size: 14px !important;
+        }
+
+        /* Multi-select dropdown styling */
+        .multi-select-wrapper {
+            position: relative;
+            min-width: 160px;
+        }
+
+        .multi-select-button {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            min-width: 150px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .multi-select-button:hover,
+        .multi-select-button.active {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .multi-select-button .arrow {
+            margin-left: 8px;
+            transition: transform 0.2s;
+        }
+
+        .multi-select-button.active .arrow {
+            transform: rotate(180deg);
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 100%;
+            width: max-content;
+            max-width: 280px;
+            background: white;
+            border: 2px solid #4299e1;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 4px;
+            overflow: visible;
+            z-index: 1000;
+            display: none;
+        }
+
+        .multi-select-dropdown.show {
+            display: block;
+        }
+
+        #projectFilterOptions,
+        #statusFilterOptions,
+        #priorityFilterOptions,
+        #qualityFilterOptions {
+            padding: 0;
+            margin: 0;
+            background: white;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+            max-height: 180px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #projectFilterOptions:not(:empty),
+        #statusFilterOptions:not(:empty),
+        #priorityFilterOptions:not(:empty),
+        #qualityFilterOptions:not(:empty) {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Multi-select option styling */
+        .multi-select-option {
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white !important;
+            box-sizing: border-box;
+            width: 100%;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .multi-select-option:hover {
+            background: #f7fafc !important;
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            width: 13px;
+            height: 13px;
+            min-width: 13px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 0;
+            display: inline-block;
+        }
+
+        .multi-select-option label {
+            cursor: pointer !important;
+            font-weight: normal !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            color: #2d3748 !important;
+            font-size: 13px !important;
+            line-height: 1.3 !important;
+            display: inline !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            word-break: break-word;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8f9fa;
+        }
+
+        .multi-select-actions button {
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 0.8em;
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .multi-select-actions button:hover {
+            background: #cbd5e0;
+        }
+
+        .selected-count {
+            display: inline-block;
+            background: #4299e1;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 6px;
         }
 
         select, input {
@@ -1419,30 +1587,70 @@
         <div class="filters">
             <div class="filter-group">
                 <label>Project</label>
-                <select id="projectFilter" onchange="applyFilters()">
-                    <option value="all">All Projects</option>
-                </select>
+                <div class="multi-select-wrapper" id="projectFilterWrapper">
+                    <div class="multi-select-button" onclick="toggleMultiSelect('projectFilter')">
+                        <span id="projectFilterText">All Projects</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="projectFilterDropdown">
+                        <div id="projectFilterOptions"></div>
+                        <div class="multi-select-actions">
+                            <button onclick="selectAllFilter('projectFilter')">Select All</button>
+                            <button onclick="clearAllFilter('projectFilter')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="filter-group">
                 <label>Status</label>
-                <select id="statusFilter" onchange="applyFilters()">
-                    <option value="all">All Status</option>
-                </select>
+                <div class="multi-select-wrapper" id="statusFilterWrapper">
+                    <div class="multi-select-button" onclick="toggleMultiSelect('statusFilter')">
+                        <span id="statusFilterText">All Status</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="statusFilterDropdown">
+                        <div id="statusFilterOptions"></div>
+                        <div class="multi-select-actions">
+                            <button onclick="selectAllFilter('statusFilter')">Select All</button>
+                            <button onclick="clearAllFilter('statusFilter')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="filter-group">
                 <label>Priority</label>
-                <select id="priorityFilter" onchange="applyFilters()">
-                    <option value="all">All Priorities</option>
-                </select>
+                <div class="multi-select-wrapper" id="priorityFilterWrapper">
+                    <div class="multi-select-button" onclick="toggleMultiSelect('priorityFilter')">
+                        <span id="priorityFilterText">All Priorities</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="priorityFilterDropdown">
+                        <div id="priorityFilterOptions"></div>
+                        <div class="multi-select-actions">
+                            <button onclick="selectAllFilter('priorityFilter')">Select All</button>
+                            <button onclick="clearAllFilter('priorityFilter')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="filter-group">
                 <label>Quality (bugs)</label>
-                <select id="qualityFilter" onchange="applyFilters()">
-                    <option value="all">All Bug Counts</option>
-                </select>
+                <div class="multi-select-wrapper" id="qualityFilterWrapper">
+                    <div class="multi-select-button" onclick="toggleMultiSelect('qualityFilter')">
+                        <span id="qualityFilterText">All Bug Counts</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="qualityFilterDropdown">
+                        <div id="qualityFilterOptions"></div>
+                        <div class="multi-select-actions">
+                            <button onclick="selectAllFilter('qualityFilter')">Select All</button>
+                            <button onclick="clearAllFilter('qualityFilter')">Clear All</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="filter-group search-box">
@@ -1653,20 +1861,12 @@
                 // Treat the "Date" field as the planned due date. Of the tasks that were
                 // planned to be finished by today, how many are actually Done (on plan)?
                 const today = new Date();
-                console.log(`[RAG TABLE] Current date for timeline calc: ${today.toISOString()}`);
                 today.setHours(23, 59, 59, 999); // Use end of day to be more inclusive
 
                 const dueByNow = projectData.filter(item => {
                     const d = new Date(item.Date);
                     return !isNaN(d) && d <= today;
                 });
-                console.log(`[RAG TABLE] Project ${projectName}: ${dueByNow.length} tasks due by now out of ${projectData.length} total`);
-                console.log(`[RAG TABLE] Project ${projectName} sample data:`, projectData.slice(0, 2).map(item => ({
-                    Task: item.Task,
-                    Status: item.Status,
-                    Date: item.Date,
-                    Project: item.Project
-                })));
                 
                 const completedOnPlan = dueByNow.filter(item => item.Status === 'Done').length;
                 
@@ -1674,13 +1874,8 @@
                 const overdueCount = projectData.filter(item => {
                     const dueDate = new Date(item.Date);
                     const isOverdue = !isNaN(dueDate) && dueDate < today && item.Status !== 'Done';
-                    if (isOverdue) {
-                        console.log(`[RAG TABLE] Overdue task in ${projectName}: ${item.Task}, due: ${item.Date}, status: ${item.Status}`);
-                    }
                     return isOverdue;
                 }).length;
-                
-                console.log(`[RAG TABLE] Project ${projectName}: ${overdueCount} overdue tasks`);
                 
                 const scheduleAdherence = dueByNow.length > 0
                     ? (completedOnPlan / dueByNow.length) * 100
@@ -1691,22 +1886,15 @@
                 //   Green: >= 90% of due-by-now tasks completed on plan  
                 //   Amber: 70% - 90%
                 let timelineStatus;
-                console.log(`[RAG TABLE] Project ${projectName}: scheduleAdherence=${scheduleAdherence}%, overdueCount=${overdueCount}`);
-                console.log(`[RAG TABLE] Checking overdueCount > 0: ${overdueCount} > 0 = ${overdueCount > 0}`);
-                console.log(`[RAG TABLE] Type of overdueCount: ${typeof overdueCount}, Value: ${overdueCount}`);
                 
                 if (overdueCount > 0) {
                     timelineStatus = 'red'; // Any overdue tasks = red
-                    console.log(`[RAG TABLE] Setting ${projectName} timeline to RED due to ${overdueCount} overdue tasks`);
                 } else if (scheduleAdherence >= 90) {
                     timelineStatus = 'green';
-                    console.log(`[RAG TABLE] Setting ${projectName} timeline to GREEN (${scheduleAdherence}% on plan)`);
                 } else if (scheduleAdherence >= 70) {
                     timelineStatus = 'amber';
-                    console.log(`[RAG TABLE] Setting ${projectName} timeline to AMBER (${scheduleAdherence}% on plan)`);
                 } else {
                     timelineStatus = 'red';
-                    console.log(`[RAG TABLE] Setting ${projectName} timeline to RED (${scheduleAdherence}% on plan)`);
                 }
 
                 // Calculate Quality Status (Quality = number of bugs per item)
@@ -1771,7 +1959,6 @@
                 `;
 
                 // Timeline column (Completed Due date vs Plan)
-                console.log(`[RAG TABLE] About to generate HTML for ${projectName} with timelineStatus=${timelineStatus}`);
                 html += `
                     <td class="rag-cell">
                         <div class="rag-status-box status-${timelineStatus}">
@@ -1934,40 +2121,175 @@
             updateDashboard();
         }
 
-        function populateFilters() {
-            const projects = [...new Set(allData.map(d => d.Project))];
-            const statuses = [...new Set(allData.map(d => d.Status))];
-            const priorities = [...new Set(allData.map(d => d.Priority))];
-            const qualities = [...new Set(allData.map(d => d.Quality))].sort((a, b) => a - b);
+        // Multi-select filter state
+        const selectedFilters = {
+            projectFilter: new Set(),
+            statusFilter: new Set(),
+            priorityFilter: new Set(),
+            qualityFilter: new Set()
+        };
 
-            populateSelect('projectFilter', projects);
-            populateSelect('statusFilter', statuses);
-            populateSelect('priorityFilter', priorities);
-            populateSelect('qualityFilter', qualities, qualityLabel);
+        function toggleMultiSelect(filterId) {
+            const dropdown = document.getElementById(filterId + 'Dropdown');
+            const button = dropdown.previousElementSibling;
+            
+            // Close other dropdowns
+            document.querySelectorAll('.multi-select-dropdown').forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('show');
+                    d.previousElementSibling.classList.remove('active');
+                }
+            });
+            
+            // Toggle this dropdown
+            dropdown.classList.toggle('show');
+            button.classList.toggle('active');
         }
 
-        function populateSelect(id, options, labelFn) {
-            const select = document.getElementById(id);
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = labelFn ? labelFn(option) : option;
-                select.appendChild(opt);
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.multi-select-wrapper')) {
+                document.querySelectorAll('.multi-select-dropdown').forEach(d => {
+                    d.classList.remove('show');
+                    d.previousElementSibling.classList.remove('active');
+                });
+            }
+        });
+
+        function updateFilterText(filterId) {
+            const textElement = document.getElementById(filterId + 'Text');
+            const selected = selectedFilters[filterId];
+            
+            const labelMap = {
+                projectFilter: 'Projects',
+                statusFilter: 'Status',
+                priorityFilter: 'Priorities',
+                qualityFilter: 'Bug Counts'
+            };
+            
+            if (selected.size === 0) {
+                textElement.innerHTML = `All ${labelMap[filterId]}`;
+            } else if (selected.size === 1) {
+                const value = Array.from(selected)[0];
+                const displayValue = filterId === 'qualityFilter' ? qualityLabel(value) : value;
+                textElement.innerHTML = `${displayValue}`;
+            } else {
+                textElement.innerHTML = `${selected.size} selected <span class="selected-count">${selected.size}</span>`;
+            }
+        }
+
+        function selectAllFilter(filterId) {
+            const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+            options.forEach(checkbox => {
+                checkbox.checked = true;
+                selectedFilters[filterId].add(checkbox.value);
             });
+            updateFilterText(filterId);
+            applyFilters();
+        }
+
+        function clearAllFilter(filterId) {
+            const options = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+            options.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectedFilters[filterId].clear();
+            updateFilterText(filterId);
+            applyFilters();
+        }
+
+        function handleFilterChange(filterId, value, checked) {
+            // Convert value back to original type if needed
+            const originalValue = value === 'null' ? null : value;
+            
+            if (checked) {
+                selectedFilters[filterId].add(String(originalValue));
+            } else {
+                selectedFilters[filterId].delete(String(originalValue));
+            }
+            updateFilterText(filterId);
+            applyFilters();
+        }
+
+        function populateFilters() {
+            const projects = [...new Set(allData.map(d => d.Project))].sort();
+            const statuses = [...new Set(allData.map(d => d.Status))].sort();
+            const priorities = [...new Set(allData.map(d => d.Priority))].sort();
+            const qualities = [...new Set(allData.map(d => d.Quality))].sort((a, b) => a - b);
+
+            populateMultiSelect('projectFilter', projects);
+            populateMultiSelect('statusFilter', statuses);
+            populateMultiSelect('priorityFilter', priorities);
+            populateMultiSelect('qualityFilter', qualities, qualityLabel);
+        }
+
+        function populateMultiSelect(filterId, options, labelFn) {
+            const container = document.getElementById(filterId + 'Options');
+            if (!container) {
+                console.error(`Container not found: ${filterId}Options`);
+                return;
+            }
+            
+            container.innerHTML = '';
+            container.style.display = 'block';
+            container.style.visibility = 'visible';
+            container.style.opacity = '1';
+            
+            console.log(`Populating ${filterId} with ${options.length} options:`, options);
+            
+            if (options.length === 0) {
+                container.innerHTML = '<div style="padding: 10px; color: #999;">No options available</div>';
+                return;
+            }
+            
+            let html = '';
+            options.forEach((option, index) => {
+                const labelText = labelFn ? labelFn(option) : (option !== null && option !== undefined ? String(option) : 'N/A');
+                const safeId = String(option).replace(/[^a-zA-Z0-9]/g, '_');
+                
+                html += `
+                    <div class="multi-select-option">
+                        <input type="checkbox" 
+                               id="${filterId}_${safeId}" 
+                               value="${option}" 
+                               onchange="handleFilterChange('${filterId}', '${option}', this.checked)">
+                        <label for="${filterId}_${safeId}">${labelText}</label>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Force reflow
+            container.offsetHeight;
+            
+            // Add click handlers to make entire row clickable
+            container.querySelectorAll('.multi-select-option').forEach(optionDiv => {
+                optionDiv.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+            
+            console.log(`${filterId} successfully populated with HTML`);
+            console.log(`Container height: ${container.offsetHeight}px, children: ${container.children.length}`);
         }
 
         function applyFilters() {
-            const projectFilter = document.getElementById('projectFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;
-            const qualityFilter = document.getElementById('qualityFilter').value;
             const searchText = document.getElementById('searchBox').value.toLowerCase();
 
             filteredData = allData.filter(item => {
-                const matchesProject = projectFilter === 'all' || item.Project === projectFilter;
-                const matchesStatus = statusFilter === 'all' || item.Status === statusFilter;
-                const matchesPriority = priorityFilter === 'all' || item.Priority === priorityFilter;
-                const matchesQuality = qualityFilter === 'all' || String(item.Quality) === qualityFilter;
+                const matchesProject = selectedFilters.projectFilter.size === 0 || 
+                    selectedFilters.projectFilter.has(item.Project);
+                const matchesStatus = selectedFilters.statusFilter.size === 0 || 
+                    selectedFilters.statusFilter.has(item.Status);
+                const matchesPriority = selectedFilters.priorityFilter.size === 0 || 
+                    selectedFilters.priorityFilter.has(item.Priority);
+                const matchesQuality = selectedFilters.qualityFilter.size === 0 || 
+                    selectedFilters.qualityFilter.has(String(item.Quality));
                 const matchesSearch = searchText === '' || 
                     (item.Story && item.Story.toLowerCase().includes(searchText)) ||
                     (item.Task && item.Task.toLowerCase().includes(searchText)) ||
@@ -1981,10 +2303,14 @@
         }
 
         function resetFilters() {
-            document.getElementById('projectFilter').value = 'all';
-            document.getElementById('statusFilter').value = 'all';
-            document.getElementById('priorityFilter').value = 'all';
-            document.getElementById('qualityFilter').value = 'all';
+            // Clear all selected filters
+            Object.keys(selectedFilters).forEach(filterId => {
+                selectedFilters[filterId].clear();
+                const checkboxes = document.querySelectorAll(`#${filterId}Options input[type="checkbox"]`);
+                checkboxes.forEach(checkbox => checkbox.checked = false);
+                updateFilterText(filterId);
+            });
+            
             document.getElementById('searchBox').value = '';
             applyFilters();
         }
@@ -2465,6 +2791,32 @@
             const validItems = items.filter(item => item['Start Date'] && item.Date);
             if (validItems.length === 0) return;
             
+            // Calculate the earliest start date and latest end date for this specific chart
+            let earliestStart = null;
+            let latestEnd = null;
+            
+            validItems.forEach(item => {
+                const startDate = new Date(item['Start Date']);
+                const endDate = item.Status === 'Done' && item['Actual Completion Date'] 
+                    ? new Date(item['Actual Completion Date'])
+                    : new Date(item.Date);
+                
+                if (!earliestStart || startDate < earliestStart) {
+                    earliestStart = startDate;
+                }
+                if (!latestEnd || endDate > latestEnd) {
+                    latestEnd = endDate;
+                }
+            });
+            
+            // Add buffer to make the chart look better (5% on each side)
+            if (earliestStart && latestEnd) {
+                const dateRange = latestEnd - earliestStart;
+                const buffer = dateRange * 0.05; // 5% buffer
+                earliestStart = new Date(earliestStart.getTime() - buffer);
+                latestEnd = new Date(latestEnd.getTime() + buffer);
+            }
+            
             // Sort by start date
             validItems.sort((a, b) => new Date(a['Start Date']) - new Date(b['Start Date']));
             
@@ -2560,6 +2912,8 @@
                     scales: {
                         x: {
                             type: 'time',
+                            min: earliestStart,
+                            max: latestEnd,
                             time: {
                                 unit: 'day',
                                 displayFormats: {
@@ -2631,7 +2985,7 @@
         function updateTable() {
             const container = document.getElementById('groupedTableContainer');
             
-            console.log('updateTable called, filteredData length:', filteredData.length);
+            
             
             if (filteredData.length === 0) {
                 container.innerHTML = `
@@ -3051,10 +3405,10 @@
                 html += `</div>`; // Close project children
             });
             
-            console.log('updateTable: Generated HTML length:', html.length);
-            console.log('updateTable: First 200 chars of HTML:', html.substring(0, 200));
+            
+            
             container.innerHTML = html;
-            console.log('updateTable: container.children.length after setting innerHTML:', container.children.length);
+            
             
             // Create Gantt charts for each project after DOM is ready
             setTimeout(() => {
@@ -3133,8 +3487,8 @@
             try {
                 const container = document.getElementById('clientGroupedTableContainer');
                 
-                console.log('updateClientTable called, filteredData length:', filteredData.length);
-                console.log('Container element:', container);
+                
+                
                 
                 if (!container) {
                     console.error('ERROR: clientGroupedTableContainer element not found!');
@@ -3374,10 +3728,8 @@
                 html += `</div>`;
             });
             
-            console.log('updateClientTable: First 200 chars of HTML:', html.substring(0, 200));
+            
             container.innerHTML = html;
-            console.log('updateClientTable: container.children.length after setting innerHTML:', container.children.length);
-            console.log('✓ updateClientTable completed successfully');
             
             // Create Gantt charts for each client after DOM is ready
             setTimeout(() => {
@@ -4705,3 +5057,4 @@
     </script>
 </body>
 </html>
+
