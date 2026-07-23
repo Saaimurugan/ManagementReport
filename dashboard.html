@@ -1535,6 +1535,54 @@
             transform: translateY(-1px);
         }
 
+        /* ── Drill-Down Tabs ─────────────────────────────────────────── */
+        .drill-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e2e8f0;
+            background: #f7fafc;
+            border-radius: 12px 12px 0 0;
+            padding: 0 20px;
+        }
+
+        .drill-tab {
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 0;
+            transform: none;
+            box-shadow: none;
+            white-space: nowrap;
+        }
+
+        .drill-tab:hover {
+            color: #4299e1;
+            background: rgba(66, 153, 225, 0.06);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .drill-tab.active {
+            color: #2c5282;
+            border-bottom-color: #4299e1;
+            background: white;
+        }
+
+        .drill-tab-content {
+            display: none;
+        }
+
+        .drill-tab-content.active {
+            display: block;
+        }
+
         .empty-state {
             padding: 60px 20px;
             text-align: center;
@@ -1697,93 +1745,99 @@
             </div>
         </div>
 
-        <!-- LEVEL 3: Client View -->
+        <!-- LEVEL 3: Tabbed Views (Client View / Detailed Task View / Sprint View) -->
         <div class="section-divider">
             <div class="section-step">3</div>
             <div class="section-heading">
-                <span class="section-name">Client View</span>
-                <span class="section-desc">Drill down by client: Client → Project → Epic → Story → Task/Bug</span>
+                <span class="section-name">Project Drill-Down</span>
+                <span class="section-desc">Explore tasks by client, project, or sprint</span>
             </div>
             <div class="section-line"></div>
         </div>
 
-        <div class="table-container">
-            <button class="expand-all-btn" onclick="toggleAllClientGroups()">
-                <span id="toggleClientBtnText">Expand All</span>
-            </button>
-            <div class="metric-legend">
-                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
-                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
-                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
-                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
-                <span class="metric-legend-item metric-legend-key">
-                    <span class="metric-chip green">&nbsp;</span> On track
-                    <span class="metric-chip amber">&nbsp;</span> At risk
-                    <span class="metric-chip red">&nbsp;</span> Critical
-                </span>
+        <div class="table-container" style="padding: 0; overflow: visible;">
+
+            <!-- Tab Headers -->
+            <div class="drill-tabs">
+                <button class="drill-tab active" onclick="switchDrillTab('client', this)">
+                    👤 Client View
+                </button>
+                <button class="drill-tab" onclick="switchDrillTab('task', this)">
+                    📋 Detailed Task View
+                </button>
+                <button class="drill-tab" onclick="switchDrillTab('sprint', this)">
+                    🏃 Sprint View
+                </button>
             </div>
-            <div class="grouped-view-container" id="clientGroupedTableContainer"></div>
+
+            <!-- Tab: Client View -->
+            <div class="drill-tab-content active" id="drill-tab-client">
+                <div style="padding: 20px 25px;">
+                    <button class="expand-all-btn" onclick="toggleAllClientGroups()">
+                        <span id="toggleClientBtnText">Expand All</span>
+                    </button>
+                    <div class="metric-legend">
+                        <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                        <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                        <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                        <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                        <span class="metric-legend-item metric-legend-key">
+                            <span class="metric-chip green">&nbsp;</span> On track
+                            <span class="metric-chip amber">&nbsp;</span> At risk
+                            <span class="metric-chip red">&nbsp;</span> Critical
+                        </span>
+                    </div>
+                    <div class="grouped-view-container" id="clientGroupedTableContainer"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Detailed Task View -->
+            <div class="drill-tab-content" id="drill-tab-task">
+                <div style="padding: 20px 25px;">
+                    <button class="expand-all-btn" onclick="toggleAllGroups()">
+                        <span id="toggleBtnText">Expand All</span>
+                    </button>
+                    <div class="metric-legend">
+                        <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                        <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                        <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                        <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                        <span class="metric-legend-item metric-legend-key">
+                            <span class="metric-chip green">&nbsp;</span> On track
+                            <span class="metric-chip amber">&nbsp;</span> At risk
+                            <span class="metric-chip red">&nbsp;</span> Critical
+                        </span>
+                    </div>
+                    <div class="grouped-view-container" id="groupedTableContainer"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Sprint View -->
+            <div class="drill-tab-content" id="drill-tab-sprint">
+                <div style="padding: 20px 25px;">
+                    <button class="expand-all-btn" onclick="toggleAllSprintGroups()">
+                        <span id="sprintToggleBtnText">Expand All</span>
+                    </button>
+                    <div class="metric-legend">
+                        <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                        <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                        <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                        <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                        <span class="metric-legend-item metric-legend-key">
+                            <span class="metric-chip green">&nbsp;</span> On track
+                            <span class="metric-chip amber">&nbsp;</span> At risk
+                            <span class="metric-chip red">&nbsp;</span> Critical
+                        </span>
+                    </div>
+                    <div class="grouped-view-container" id="sprintTableContainer"></div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- LEVEL 4: Detailed drill-down -->
+        <!-- LEVEL 4: User Performance View (renumbered) -->
         <div class="section-divider">
             <div class="section-step">4</div>
-            <div class="section-heading">
-                <span class="section-name">Detailed Task View</span>
-                <span class="section-desc">Drill down: Project → Epic → Story → Task/Bug</span>
-            </div>
-            <div class="section-line"></div>
-        </div>
-
-        <div class="table-container">
-            <button class="expand-all-btn" onclick="toggleAllGroups()">
-                <span id="toggleBtnText">Expand All</span>
-            </button>
-            <div class="metric-legend">
-                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
-                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
-                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
-                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
-                <span class="metric-legend-item metric-legend-key">
-                    <span class="metric-chip green">&nbsp;</span> On track
-                    <span class="metric-chip amber">&nbsp;</span> At risk
-                    <span class="metric-chip red">&nbsp;</span> Critical
-                </span>
-            </div>
-            <div class="grouped-view-container" id="groupedTableContainer"></div>
-        </div>
-
-        <!-- LEVEL 5: Sprint View -->
-        <div class="section-divider">
-            <div class="section-step">5</div>
-            <div class="section-heading">
-                <span class="section-name">Sprint View</span>
-                <span class="section-desc">Drill down by sprint: Sprint → Project → Epic → Story → Task/Bug</span>
-            </div>
-            <div class="section-line"></div>
-        </div>
-
-        <div class="table-container">
-            <button class="expand-all-btn" onclick="toggleAllSprintGroups()">
-                <span id="sprintToggleBtnText">Expand All</span>
-            </button>
-            <div class="metric-legend">
-                <span class="metric-legend-title">Health metrics (roll up at every level):</span>
-                <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
-                <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
-                <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
-                <span class="metric-legend-item metric-legend-key">
-                    <span class="metric-chip green">&nbsp;</span> On track
-                    <span class="metric-chip amber">&nbsp;</span> At risk
-                    <span class="metric-chip red">&nbsp;</span> Critical
-                </span>
-            </div>
-            <div class="grouped-view-container" id="sprintTableContainer"></div>
-        </div>
-
-        <!-- LEVEL 6: User Performance View -->
-        <div class="section-divider">
-            <div class="section-step">6</div>
             <div class="section-heading">
                 <span class="section-name">User Performance</span>
                 <span class="section-desc">Performance metrics by user, grouped by sprint</span>
@@ -3774,6 +3828,17 @@
                 header.classList.toggle('collapsed');
                 container.classList.toggle('group-collapsed');
             }
+        }
+
+        // ===== Tab switching =====
+        function switchDrillTab(tab, btn) {
+            // Update tab buttons
+            document.querySelectorAll('.drill-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update tab content panels
+            document.querySelectorAll('.drill-tab-content').forEach(p => p.classList.remove('active'));
+            document.getElementById('drill-tab-' + tab).classList.add('active');
         }
 
         // Toggle all client groups
