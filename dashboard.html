@@ -1287,6 +1287,22 @@
         .project-analytics-container {
             padding: 20px;
             background: white;
+        }
+
+        .group-content {
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+
+        .toggle-icon {
+            cursor: pointer;
+            user-select: none;
+            font-size: 12px;
+            color: #4299e1;
+            margin-right: 8px;
+            display: inline-block;
+            width: 12px;
+        }
             border-radius: 8px;
             margin: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -4075,17 +4091,21 @@
 
         // ===== Project Analytics Charts =====
         function toggleProjectAnalytics(projectId, projectName) {
+            console.log('toggleProjectAnalytics called:', projectId, projectName);
             const analyticsContainer = document.getElementById(`analytics-${projectId}`);
             const toggleIcon = document.getElementById(`toggle-analytics-${projectId}`);
             
-            if (analyticsContainer.style.display === 'none') {
+            console.log('analyticsContainer found:', !!analyticsContainer);
+            console.log('toggleIcon found:', !!toggleIcon);
+            
+            if (analyticsContainer && analyticsContainer.style.display === 'none') {
                 analyticsContainer.style.display = 'block';
-                toggleIcon.textContent = '▲';
+                if (toggleIcon) toggleIcon.textContent = '▲';
                 createProjectAnalyticsCharts(projectName, projectId);
                 generateProjectTaskView(projectName, projectId);
-            } else {
+            } else if (analyticsContainer) {
                 analyticsContainer.style.display = 'none';
-                toggleIcon.textContent = '▼';
+                if (toggleIcon) toggleIcon.textContent = '▼';
             }
         }
 
@@ -4103,11 +4123,16 @@
         }
 
         function generateProjectTaskView(projectName, projectId) {
-            const container = document.getElementById(`project-tasks-${projectId}`);
-            if (!container) return;
+            const containerId = `project-tasks-${projectName.replace(/\s+/g, '-').toLowerCase()}`;
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.log('Container not found:', containerId);
+                return;
+            }
 
             // Get tasks for this specific project
             const projectData = filteredData.filter(item => item.Project === projectName);
+            console.log('Project data for', projectName, ':', projectData.length, 'tasks');
             
             if (projectData.length === 0) {
                 container.innerHTML = `
@@ -4131,6 +4156,7 @@
 
         function updateProjectTable(projectData, container) {
             console.log('updateProjectTable called, projectData length:', projectData.length);
+            console.log('Sample project data:', projectData.slice(0, 2));
             
             if (projectData.length === 0) {
                 container.innerHTML = `
@@ -4232,7 +4258,7 @@
                 html += `
                     <div class="group-level-1" onclick="toggleGroup('project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
                         <div class="group-header-content">
-                            <div class="toggle-icon" id="toggle-project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                            <div class="toggle-icon" id="toggle-project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
                             <div class="group-title">
                                 <span>📁</span>
                                 <span>${projectName}</span>
@@ -4262,7 +4288,7 @@
                     html += `
                         <div class="group-level-2" onclick="toggleGroup('epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
                             <div class="group-header-content">
-                                <div class="toggle-icon" id="toggle-epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                                <div class="toggle-icon" id="toggle-epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
                                 <div class="group-title">
                                     <span>🎯</span>
                                     <span>${epicName}</span>
@@ -4291,7 +4317,7 @@
                         html += `
                             <div class="group-level-3" onclick="toggleGroup('story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
                                 <div class="group-header-content">
-                                    <div class="toggle-icon" id="toggle-story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                                    <div class="toggle-icon" id="toggle-story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
                                     <div class="group-title">
                                         <span>📖</span>
                                         <span>${storyName}</span>
@@ -4313,22 +4339,41 @@
                         // Task details (Level 4) - Initially collapsed
                         html += `<div id="story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}" class="group-content" style="display: none;">`;
                         
+                        // Add header row
+                        html += `
+                            <div class="task-details-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 8px; padding: 8px; background: #f8f9fa; font-weight: 600; font-size: 0.85em; border-bottom: 1px solid #e2e8f0;">
+                                <div>Task</div>
+                                <div>Type</div>
+                                <div>Status</div>
+                                <div>Priority</div>
+                                <div>Assignee</div>
+                                <div>Date</div>
+                                <div>Points</div>
+                                <div>Planned</div>
+                                <div>Consumed</div>
+                                <div>Remaining</div>
+                                <div>Quality</div>
+                                <div>Dependencies</div>
+                                <div>Health</div>
+                            </div>
+                        `;
+                        
                         // Task details rows
                         storyTasks.forEach(task => {
                             const taskRAG = calculateTaskRAG(task);
                             html += `
-                                <div class="task-details-row task-rag-${taskRAG}">
+                                <div class="task-details-row task-rag-${taskRAG}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 8px; padding: 8px; font-size: 0.85em; border-bottom: 1px solid #f1f3f5;">
                                     <div>${task.Task || 'Untitled'}</div>
                                     <div>${task.Type || '-'}</div>
-                                    <div>${task.Status || '-'}</div>
-                                    <div>${task.Priority || '-'}</div>
+                                    <div><span class="status-badge status-${task.Status ? task.Status.toLowerCase().replace(' ', '') : 'unknown'}">${task.Status || '-'}</span></div>
+                                    <div class="priority-${task.Priority ? task.Priority.toLowerCase() : 'unknown'}">${task.Priority || '-'}</div>
                                     <div>${task.Assignee || '-'}</div>
                                     <div>${task.Date || '-'}</div>
                                     <div>${task['Story Points'] || 0}</div>
                                     <div>${task['Budget Planned'] || 0}</div>
                                     <div>${task['Budget Consumed'] || 0}</div>
-                                    <div>${task['Budget Remaining'] || 0}</div>
-                                    <div>${task.Quality || 0}</div>
+                                    <div class="${(task['Budget Remaining'] || 0) >= 0 ? 'positive' : 'negative'}">${task['Budget Remaining'] || 0}</div>
+                                    <div class="quality-rag-${task._qualityRAG}">${task.Quality || 0}</div>
                                     <div>${task.Dependencies || '-'}</div>
                                     <div class="task-metrics-cell">
                                         <span class="metric-chip metric-chip-sm ${task._effortsRAG}">E</span>
@@ -4364,6 +4409,22 @@
             }
             
             window.analyticsCharts[canvasId] = new Chart(ctx, config);
+        }
+
+        // Toggle function for project task view groups
+        function toggleGroup(groupId) {
+            const content = document.getElementById(groupId);
+            const toggle = document.getElementById(`toggle-${groupId}`);
+            
+            if (content && toggle) {
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    toggle.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    toggle.textContent = '▶';
+                }
+            }
         }
 
         // Format numbers with K for thousands
