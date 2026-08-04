@@ -1803,9 +1803,8 @@
                                     <h4>📊 Project Analytics: ${projectName}</h4>
                                     <div class="chart-tabs">
                                         <button class="chart-tab active" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'resource')">💰 Resources</button>
-                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'progress')">📈 Progress</button>
-                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'velocity')">🚀 Velocity</button>
-                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'risk')">🔥 Risk</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'progress')">📊 Progress</button>
+                                        <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'velocity')">📈 Velocity</button>
                                         <button class="chart-tab" onclick="showChart('${projectName.replace(/\s+/g, '-').toLowerCase()}', 'roi')">💎 ROI</button>
                                     </div>
                                 </div>
@@ -1818,29 +1817,23 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Chart 2: Progress vs Effort -->
+                                <!-- Chart 2: Progress Distribution -->
                                 <div class="chart-panel" id="progress-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
-                                    <div class="chart-title">📈 Progress vs Effort Efficiency</div>
+                                    <div class="chart-title">📊 Progress Distribution</div>
                                     <div class="chart-wrapper">
                                         <canvas id="progress-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
                                     </div>
                                 </div>
                                 
-                                <!-- Chart 3: Velocity & Quality -->
+                                <!-- Chart 3: Velocity Trend -->
                                 <div class="chart-panel" id="velocity-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
-                                    <div class="chart-title">🚀 Velocity & Quality Trend</div>
+                                    <div class="chart-title">📈 Velocity Trend</div>
                                     <div class="chart-wrapper">
                                         <canvas id="velocity-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
                                     </div>
                                 </div>
                                 
-                                <!-- Chart 4: Risk Heat Map -->
-                                <div class="chart-panel" id="risk-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
-                                    <div class="chart-title">🔥 Risk Assessment Matrix</div>
-                                    <div class="chart-wrapper">
-                                        <canvas id="risk-chart-${projectName.replace(/\s+/g, '-').toLowerCase()}" width="800" height="300"></canvas>
-                                    </div>
-                                </div>
+
                                 
                                 <!-- Chart 5: ROI & Savings -->
                                 <div class="chart-panel" id="roi-${projectName.replace(/\s+/g, '-').toLowerCase()}" style="display: none;">
@@ -4172,11 +4165,10 @@
 
             if (projectTasks.length === 0) return;
 
-            // Create all 5 charts
+            // Create all 4 charts
             createResourceChart(projectTasks, projectId);
             createProgressChart(projectTasks, projectId);
             createVelocityChart(projectTasks, projectId);
-            createRiskChart(projectTasks, projectId);
             createROIChart(projectTasks, projectId);
         }
 
@@ -4253,59 +4245,72 @@
             destroyAndCreateChart('resourceCharts', canvasId, ctx, config);
         }
 
-        // Chart 2: Progress vs Effort (Scatter Plot)
+        // Chart 2: Progress Distribution (Histogram)
         function createProgressChart(tasks, projectId) {
             const canvasId = `progress-chart-${projectId}`;
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
 
-            // Group by Epic for scatter points
-            const progressData = {};
+            // Create histogram data for progress distribution
+            const progressRanges = [
+                { label: '0-20%', min: 0, max: 20, count: 0 },
+                { label: '21-40%', min: 21, max: 40, count: 0 },
+                { label: '41-60%', min: 41, max: 60, count: 0 },
+                { label: '61-80%', min: 61, max: 80, count: 0 },
+                { label: '81-100%', min: 81, max: 100, count: 0 }
+            ];
+
+            // Group by Epic and calculate completion rate
+            const epicProgress = {};
             tasks.forEach(task => {
                 const epic = task.EPIC || 'Other';
-                if (!progressData[epic]) {
-                    progressData[epic] = {
+                if (!epicProgress[epic]) {
+                    epicProgress[epic] = {
                         totalTasks: 0,
-                        completedTasks: 0,
-                        totalPlanned: 0,
-                        totalConsumed: 0
+                        completedTasks: 0
                     };
                 }
-                progressData[epic].totalTasks++;
-                if (task.Status === 'Done') progressData[epic].completedTasks++;
-                progressData[epic].totalPlanned += task['Budget Planned'] || 0;
-                progressData[epic].totalConsumed += task['Budget Consumed'] || 0;
+                epicProgress[epic].totalTasks++;
+                if (task.Status === 'Done') epicProgress[epic].completedTasks++;
             });
 
-            const scatterData = Object.keys(progressData).map(epic => {
-                const data = progressData[epic];
+            // Calculate completion rates and categorize into histogram ranges
+            Object.keys(epicProgress).forEach(epic => {
+                const data = epicProgress[epic];
                 const completionRate = (data.completedTasks / data.totalTasks) * 100;
-                const effortRate = data.totalPlanned > 0 ? (data.totalConsumed / data.totalPlanned) * 100 : 0;
-                return {
-                    x: completionRate,
-                    y: effortRate,
-                    label: epic,
-                    size: data.totalTasks * 2
-                };
+                
+                progressRanges.forEach(range => {
+                    if (completionRate >= range.min && completionRate <= range.max) {
+                        range.count++;
+                    }
+                });
             });
+
+            const labels = progressRanges.map(range => range.label);
+            const data = progressRanges.map(range => range.count);
 
             const config = {
-                type: 'scatter',
+                type: 'bar',
                 data: {
+                    labels: labels,
                     datasets: [{
-                        label: 'Epics',
-                        data: scatterData,
-                        backgroundColor: scatterData.map(point => 
-                            point.y > point.x + 10 ? '#fed7d7' :  // Over budget
-                            point.y < point.x - 10 ? '#c6f6d5' :  // Under budget
-                            '#feebc8'  // On track
-                        ),
-                        borderColor: scatterData.map(point => 
-                            point.y > point.x + 10 ? '#e53e3e' :
-                            point.y < point.x - 10 ? '#38a169' :
-                            '#dd6b20'
-                        ),
-                        pointRadius: scatterData.map(point => Math.max(5, point.size))
+                        label: 'Number of Epics',
+                        data: data,
+                        backgroundColor: [
+                            '#fed7d7', // 0-20% - Red (low progress)
+                            '#feebc8', // 21-40% - Orange
+                            '#faf5b4', // 41-60% - Yellow
+                            '#d4edda', // 61-80% - Light green
+                            '#c6f6d5'  // 81-100% - Green (high progress)
+                        ],
+                        borderColor: [
+                            '#e53e3e',
+                            '#dd6b20',
+                            '#d69e2e',
+                            '#48bb78',
+                            '#38a169'
+                        ],
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -4314,31 +4319,38 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Progress vs Effort Efficiency by Epic'
+                            text: 'Progress Distribution by Epic Completion Rate'
+                        },
+                        legend: {
+                            position: 'top'
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const point = context.raw;
-                                    return [
-                                        `Epic: ${point.label}`,
-                                        `Completion: ${point.x.toFixed(1)}%`,
-                                        `Effort Used: ${point.y.toFixed(1)}%`,
-                                        `Efficiency: ${(point.x - point.y).toFixed(1)}%`
-                                    ];
+                                    const count = context.raw;
+                                    const total = data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+                                    return `${count} epics (${percentage}%)`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Completion Rate (%)' },
-                            min: 0,
-                            max: 100
+                            title: { 
+                                display: true, 
+                                text: 'Completion Rate Range' 
+                            }
                         },
                         y: {
-                            title: { display: true, text: 'Effort Used (%)' },
-                            min: 0
+                            title: { 
+                                display: true, 
+                                text: 'Number of Epics' 
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
                         }
                     }
                 }
@@ -4347,7 +4359,7 @@
             destroyAndCreateChart('progressCharts', canvasId, ctx, config);
         }
 
-        // Chart 3: Velocity & Quality (Dual-axis Line)
+        // Chart 3: Velocity Trend (Line Chart)
         function createVelocityChart(tasks, projectId) {
             const canvasId = `velocity-chart-${projectId}`;
             const ctx = document.getElementById(canvasId);
@@ -4387,138 +4399,113 @@
                         data: velocityData,
                         borderColor: '#4299e1',
                         backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#4299e1',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        fill: false,
+                        tension: 0.2,
                         yAxisID: 'y'
                     }, {
                         label: 'Avg Bugs per Task',
                         data: qualityData,
                         borderColor: '#ed8936',
                         backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ed8936',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        fill: false,
+                        tension: 0.2,
                         yAxisID: 'y1'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     plugins: {
                         title: {
                             display: true,
                             text: 'Velocity & Quality Trend by Sprint'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Story Points' }
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: { display: true, text: 'Bugs per Task' },
-                            grid: { drawOnChartArea: false }
-                        }
-                    }
-                }
-            };
-
-            destroyAndCreateChart('velocityCharts', canvasId, ctx, config);
-        }
-
-        // Chart 4: Risk Heat Map (Matrix)
-        function createRiskChart(tasks, projectId) {
-            const canvasId = `risk-chart-${projectId}`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-
-            // Calculate actual risk factors from project data
-            const totalTasks = tasks.length;
-            const completedTasks = tasks.filter(t => t.Status === 'Done').length;
-            const overdueTasks = tasks.filter(t => {
-                const dueDate = new Date(t.Date);
-                const today = new Date();
-                today.setHours(23, 59, 59, 999); // Use same logic as timeline calculation
-                return !isNaN(dueDate) && dueDate < today && t.Status !== 'Done';
-            }).length;
-            
-            const totalBudget = tasks.reduce((sum, t) => sum + (t['Budget Planned'] || 0), 0);
-            const consumedBudget = tasks.reduce((sum, t) => sum + (t['Budget Consumed'] || 0), 0);
-            const budgetOverrun = totalBudget > 0 ? (consumedBudget / totalBudget) > 1.2 : false;
-            
-            const totalBugs = tasks.reduce((sum, t) => sum + (t.Quality || 0), 0);
-            const avgBugsPerTask = totalTasks > 0 ? totalBugs / totalTasks : 0;
-
-            // Risk matrix based on actual data
-            const riskMatrix = [
-                { x: 1, y: 1, risk: `Timeline: ${overdueTasks}/${totalTasks} overdue`, 
-                  color: overdueTasks > totalTasks * 0.2 ? '#fed7d7' : overdueTasks > 0 ? '#feebc8' : '#c6f6d5', 
-                  size: Math.max(8, overdueTasks * 2) },
-                { x: 2, y: 1, risk: `Budget: ${((consumedBudget/totalBudget)*100).toFixed(0)}% used`, 
-                  color: budgetOverrun ? '#fed7d7' : consumedBudget/totalBudget > 0.8 ? '#feebc8' : '#c6f6d5', 
-                  size: Math.max(8, (consumedBudget/totalBudget) * 20) },
-                { x: 3, y: 1, risk: `Quality: ${avgBugsPerTask.toFixed(1)} bugs/task`, 
-                  color: avgBugsPerTask > 2 ? '#fed7d7' : avgBugsPerTask > 1 ? '#feebc8' : '#c6f6d5', 
-                  size: Math.max(8, avgBugsPerTask * 8) },
-            ];
-
-            const config = {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Risk Factors',
-                        data: riskMatrix,
-                        backgroundColor: riskMatrix.map(point => point.color),
-                        borderColor: '#2d3748',
-                        pointRadius: riskMatrix.map(point => point.size)
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Project Risk Assessment'
+                        legend: {
+                            position: 'top'
                         },
                         tooltip: {
+                            mode: 'index',
+                            intersect: false,
                             callbacks: {
                                 label: function(context) {
-                                    const point = context.raw;
-                                    return point.risk;
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2);
+                                    }
+                                    return label;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Risk Category' },
-                            min: 0.5,
-                            max: 3.5,
-                            ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    const labels = ['', 'Timeline', 'Budget', 'Quality'];
-                                    return labels[value] || '';
-                                }
+                            title: { 
+                                display: true, 
+                                text: 'Sprint' 
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         },
                         y: {
-                            title: { display: true, text: 'Risk Level' },
-                            min: 0.5,
-                            max: 1.5,
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { 
+                                display: true, 
+                                text: 'Story Points',
+                                color: '#4299e1'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(66, 153, 225, 0.2)'
+                            },
                             ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    return 'Current Status';
-                                }
+                                color: '#4299e1'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { 
+                                display: true, 
+                                text: 'Bugs per Task',
+                                color: '#ed8936'
+                            },
+                            beginAtZero: true,
+                            grid: { 
+                                drawOnChartArea: false,
+                                color: 'rgba(237, 137, 54, 0.2)'
+                            },
+                            ticks: {
+                                color: '#ed8936'
                             }
                         }
                     }
                 }
             };
 
-            destroyAndCreateChart('riskCharts', canvasId, ctx, config);
+            destroyAndCreateChart('velocityCharts', canvasId, ctx, config);
         }
 
         // Chart 5: ROI & Savings (Waterfall)
