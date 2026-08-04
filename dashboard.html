@@ -2046,7 +2046,6 @@
                     <tr class="project-analytics-row">
                         <td colspan="5" class="project-analytics-cell">
                             <div class="project-analytics-container" style="display: none;" id="analytics-${projectName.replace(/\s+/g, '-').toLowerCase()}">
-
                                 
                                 <div class="analytics-stats">
                                     <div class="analytics-stat">
@@ -2061,6 +2060,25 @@
                                     <div class="analytics-stat">
                                         <strong>Timeline:</strong> ${scheduleAdherence.toFixed(0)}% on track
                                     </div>
+                                </div>
+
+                                <!-- Detailed Task View for this Project -->
+                                <div style="margin-top: 25px;">
+                                    <h5 style="color: #2d3748; font-size: 1.1em; margin-bottom: 15px; font-weight: 600;">
+                                        📋 Detailed Task View - ${projectName}
+                                    </h5>
+                                    <div class="metric-legend" style="margin-bottom: 15px;">
+                                        <span class="metric-legend-title">Health metrics (roll up at every level):</span>
+                                        <span class="metric-legend-item"><span class="metric-chip green">E</span> Efforts — budget/effort consumed vs planned</span>
+                                        <span class="metric-legend-item"><span class="metric-chip amber">T</span> Timeline — schedule adherence vs due date</span>
+                                        <span class="metric-legend-item"><span class="metric-chip red">Q</span> Quality — bugs vs 1 allowed (≤1 ok, 2+ over)</span>
+                                        <span class="metric-legend-item metric-legend-key">
+                                            <span class="metric-chip green">&nbsp;</span> On track
+                                            <span class="metric-chip amber">&nbsp;</span> At risk
+                                            <span class="metric-chip red">&nbsp;</span> Critical
+                                        </span>
+                                    </div>
+                                    <div class="grouped-view-container" id="project-tasks-${projectName.replace(/\s+/g, '-').toLowerCase()}"></div>
                                 </div>
                             </div>
                         </td>
@@ -4555,6 +4573,7 @@
                 analyticsContainer.style.display = 'block';
                 toggleIcon.textContent = '▲';
                 createProjectAnalyticsCharts(projectName, projectId);
+                generateProjectTaskView(projectName, projectId);
             } else {
                 analyticsContainer.style.display = 'none';
                 toggleIcon.textContent = '▼';
@@ -4574,11 +4593,256 @@
             // No charts to create
         }
 
+        function generateProjectTaskView(projectName, projectId) {
+            const container = document.getElementById(`project-tasks-${projectId}`);
+            if (!container) return;
+
+            // Get tasks for this specific project
+            const projectData = filteredData.filter(item => item.Project === projectName);
+            
+            if (projectData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No tasks found for this project</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Use the same logic as the main updateTable function but filtered for this project
+            updateProjectTable(projectData, container);
+        }
 
 
 
 
 
+
+
+        function updateProjectTable(projectData, container) {
+            console.log('updateProjectTable called, projectData length:', projectData.length);
+            
+            if (projectData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No tasks found for this project</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Helper function to safely convert to lowercase
+            const safeLowerCase = (str) => {
+                return str && typeof str === 'string' ? str.toLowerCase() : '';
+            };
+            
+            // Function to calculate RAG status for a task/bug
+            const calculateTaskRAG = (item) => computeTaskRAG(item);
+            
+            // Function to roll up RAG status from child items
+            const rollupRAG = (items) => {
+                if (items.length === 0) return 'green';
+                
+                const ragStatuses = items.map(item => item._ragStatus || calculateTaskRAG(item));
+                
+                // If ANY item is red, the rollup is red
+                if (ragStatuses.includes('red')) return 'red';
+                
+                // If ANY item is amber, the rollup is amber
+                if (ragStatuses.includes('amber')) return 'amber';
+                
+                // All items are green
+                return 'green';
+            };
+
+            // ---- Three-metric model: Efforts, Timeline, Quality (per item) ----
+            const calcEfforts = (item) => {
+                if (item['Budget Remaining'] < 0) return 'red';
+                const planned = item['Budget Planned'] || 0;
+                const consumed = item['Budget Consumed'] || 0;
+                if (planned <= 0) return 'green';
+                const ratio = consumed / planned;
+                if (ratio > 1) return 'red';
+                if (ratio >= 0.9) return 'amber';
+                return 'green';
+            };
+
+            const calcTimeline = (item) => {
+                const dueDate = new Date(item.Date);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                
+                if (isNaN(dueDate)) return 'green';
+                
+                if (item.Status === 'Done') {
+                    const completionDate = new Date(item['Actual Completion Date'] || today);
+                    return completionDate <= dueDate ? 'green' : 'amber';
+                }
+                
+                if (dueDate < today) return 'red';
+                
+                const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                if (daysUntilDue <= 3) return 'amber';
+                return 'green';
+            };
+
+            const calcQuality = (item) => qualityRAG(item.Quality);
+
+            // Group by Project > Epic > Story
+            const projectGroups = {};
+            
+            projectData.forEach(item => {
+                const project = item.Project || 'Unknown Project';
+                const epic = item.EPIC || 'Other';
+                const story = item.Story || 'Other';
+                
+                if (!projectGroups[project]) projectGroups[project] = {};
+                if (!projectGroups[project][epic]) projectGroups[project][epic] = {};
+                if (!projectGroups[project][epic][story]) projectGroups[project][epic][story] = [];
+                
+                // Calculate individual RAG for this item
+                item._effortsRAG = calcEfforts(item);
+                item._timelineRAG = calcTimeline(item);
+                item._qualityRAG = calcQuality(item);
+                item._ragStatus = calculateTaskRAG(item);
+                
+                projectGroups[project][epic][story].push(item);
+            });
+
+            // Generate HTML with grouped view
+            let html = '<div class="grouped-view-container">';
+            
+            Object.keys(projectGroups).sort().forEach(projectName => {
+                const projectEpics = projectGroups[projectName];
+                const projectTasks = Object.values(projectEpics).flat().flat();
+                const projectRAG = rollupRAG(projectTasks);
+                
+                // Project level (Level 1)
+                html += `
+                    <div class="group-level-1" onclick="toggleGroup('project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
+                        <div class="group-header-content">
+                            <div class="toggle-icon" id="toggle-project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                            <div class="group-title">
+                                <span>📁</span>
+                                <span>${projectName}</span>
+                            </div>
+                        </div>
+                        <div class="group-summary">
+                            <div class="summary-badge">
+                                <span>${projectTasks.length} tasks</span>
+                            </div>
+                            <div class="metric-chips">
+                                <span class="metric-chip ${rollupRAG(projectTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
+                                <span class="metric-chip ${rollupRAG(projectTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
+                                <span class="metric-chip ${rollupRAG(projectTasks.map(t => ({ _ragStatus: t._qualityRAG })))}">Q</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Epic level (Level 2) - Initially collapsed
+                html += `<div id="project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}" class="group-content" style="display: none;">`;
+                
+                Object.keys(projectEpics).sort().forEach(epicName => {
+                    const epicStories = projectEpics[epicName];
+                    const epicTasks = Object.values(epicStories).flat();
+                    const epicRAG = rollupRAG(epicTasks);
+                    
+                    html += `
+                        <div class="group-level-2" onclick="toggleGroup('epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
+                            <div class="group-header-content">
+                                <div class="toggle-icon" id="toggle-epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                                <div class="group-title">
+                                    <span>🎯</span>
+                                    <span>${epicName}</span>
+                                </div>
+                            </div>
+                            <div class="group-summary">
+                                <div class="summary-badge">
+                                    <span>${epicTasks.length} tasks</span>
+                                </div>
+                                <div class="metric-chips">
+                                    <span class="metric-chip ${rollupRAG(epicTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
+                                    <span class="metric-chip ${rollupRAG(epicTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
+                                    <span class="metric-chip ${rollupRAG(epicTasks.map(t => ({ _ragStatus: t._qualityRAG })))}">Q</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Story level (Level 3) - Initially collapsed
+                    html += `<div id="epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}" class="group-content" style="display: none;">`;
+                    
+                    Object.keys(epicStories).sort().forEach(storyName => {
+                        const storyTasks = epicStories[storyName];
+                        const storyRAG = rollupRAG(storyTasks);
+                        
+                        html += `
+                            <div class="group-level-3" onclick="toggleGroup('story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
+                                <div class="group-header-content">
+                                    <div class="toggle-icon" id="toggle-story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}"></div>
+                                    <div class="group-title">
+                                        <span>📖</span>
+                                        <span>${storyName}</span>
+                                    </div>
+                                </div>
+                                <div class="group-summary">
+                                    <div class="summary-badge">
+                                        <span>${storyTasks.length} tasks</span>
+                                    </div>
+                                    <div class="metric-chips">
+                                        <span class="metric-chip ${rollupRAG(storyTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
+                                        <span class="metric-chip ${rollupRAG(storyTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
+                                        <span class="metric-chip ${rollupRAG(storyTasks.map(t => ({ _ragStatus: t._qualityRAG })))}">Q</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Task details (Level 4) - Initially collapsed
+                        html += `<div id="story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}" class="group-content" style="display: none;">`;
+                        
+                        // Task details rows
+                        storyTasks.forEach(task => {
+                            const taskRAG = calculateTaskRAG(task);
+                            html += `
+                                <div class="task-details-row task-rag-${taskRAG}">
+                                    <div>${task.Task || 'Untitled'}</div>
+                                    <div>${task.Type || '-'}</div>
+                                    <div>${task.Status || '-'}</div>
+                                    <div>${task.Priority || '-'}</div>
+                                    <div>${task.Assignee || '-'}</div>
+                                    <div>${task.Date || '-'}</div>
+                                    <div>${task['Story Points'] || 0}</div>
+                                    <div>${task['Budget Planned'] || 0}</div>
+                                    <div>${task['Budget Consumed'] || 0}</div>
+                                    <div>${task['Budget Remaining'] || 0}</div>
+                                    <div>${task.Quality || 0}</div>
+                                    <div>${task.Dependencies || '-'}</div>
+                                    <div class="task-metrics-cell">
+                                        <span class="metric-chip metric-chip-sm ${task._effortsRAG}">E</span>
+                                        <span class="metric-chip metric-chip-sm ${task._timelineRAG}">T</span>
+                                        <span class="metric-chip metric-chip-sm ${task._qualityRAG}">Q</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>'; // Close story content
+                    });
+                    
+                    html += '</div>'; // Close epic content
+                });
+                
+                html += '</div>'; // Close project content
+            });
+            
+            html += '</div>'; // Close grouped-view-container
+            
+            container.innerHTML = html;
+        }
 
         // Utility function to destroy and create charts
         function destroyAndCreateChart(chartType, canvasId, ctx, config) {
