@@ -1615,6 +1615,8 @@
 
         .drill-tab-content {
             display: none;
+            padding: 0;
+            background: white;
         }
 
         .drill-tab-content.active {
@@ -3054,18 +3056,37 @@
 
         // ===== Client View: drill-down by Client -> Project -> Epic -> Story -> Task/Bug =====
         function updateClientTable() {
+            console.log('updateClientTable called');
             try {
                 const container = document.getElementById('clientGroupedTableContainer');
-                
-                
-                
                 
                 if (!container) {
                     console.error('ERROR: clientGroupedTableContainer element not found!');
                     return;
                 }
                 
+                console.log('Container found, filteredData length:', filteredData.length);
+                
                 if (filteredData.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <div>No tasks found matching your filters</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Simple test to show the function is working
+                container.innerHTML = `
+                    <div style="padding: 20px; background: #e8f5e8; border-radius: 8px; margin: 10px 0;">
+                        <h3>✅ Client View is working!</h3>
+                        <p>Found ${filteredData.length} tasks to display.</p>
+                        <p><strong>Sample clients:</strong> ${[...new Set(filteredData.map(item => item.Client).slice(0, 3))].join(', ')}</p>
+                    </div>
+                `;
+
+            } catch (error) {
                     container.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">📭</div>
@@ -3419,8 +3440,14 @@
 
         // ===== Sprint View: same drill-down as the Detailed Task View, grouped by Sprint =====
         function updateSprintTable() {
+            console.log('updateSprintTable called');
             const container = document.getElementById('sprintTableContainer');
-            if (!container) return;
+            if (!container) {
+                console.error('ERROR: sprintTableContainer element not found!');
+                return;
+            }
+            
+            console.log('Sprint container found, filteredData length:', filteredData.length);
 
             if (filteredData.length === 0) {
                 container.innerHTML = `
@@ -3431,6 +3458,15 @@
                 `;
                 return;
             }
+
+            // Simple test to show the function is working
+            container.innerHTML = `
+                <div style="padding: 20px; background: #fff3e0; border-radius: 8px; margin: 10px 0;">
+                    <h3>✅ Sprint View is working!</h3>
+                    <p>Found ${filteredData.length} tasks to display.</p>
+                    <p><strong>Sample sprints:</strong> ${[...new Set(filteredData.map(item => item.Sprint).slice(0, 3))].join(', ')}</p>
+                </div>
+            `;
 
             const safeLowerCase = (str) => (str && typeof str === 'string' ? str.toLowerCase() : '');
 
@@ -4444,18 +4480,38 @@
             window.analyticsCharts[canvasId] = new Chart(ctx, config);
         }
 
-        // Toggle function for project task view groups
-        function toggleGroup(groupId) {
-            const content = document.getElementById(groupId);
-            const toggle = document.getElementById(`toggle-${groupId}`);
-            
-            if (content && toggle) {
-                if (content.style.display === 'none') {
-                    content.style.display = 'block';
-                    toggle.textContent = '▼';
-                } else {
-                    content.style.display = 'none';
-                    toggle.textContent = '▶';
+        // Toggle function for project task view groups and other drill-down sections
+        function toggleGroup(groupId, event) {
+            // Handle event parameter for client/sprint views
+            if (event) {
+                event.stopPropagation();
+                const header = event.currentTarget;
+                const childrenDiv = document.querySelector('.' + groupId + '-children');
+                
+                if (childrenDiv) {
+                    header.classList.toggle('collapsed');
+                    childrenDiv.classList.toggle('group-collapsed');
+                    
+                    // Update toggle icon for client/sprint views
+                    const toggleIcon = header.querySelector('.toggle-icon');
+                    if (toggleIcon) {
+                        const isCollapsed = header.classList.contains('collapsed');
+                        toggleIcon.textContent = isCollapsed ? '▶' : '▼';
+                    }
+                }
+            } else {
+                // Handle project task view toggles (no event parameter)
+                const content = document.getElementById(groupId);
+                const toggle = document.getElementById(`toggle-${groupId}`);
+                
+                if (content && toggle) {
+                    if (content.style.display === 'none') {
+                        content.style.display = 'block';
+                        toggle.textContent = '▼';
+                    } else {
+                        content.style.display = 'none';
+                        toggle.textContent = '▶';
+                    }
                 }
             }
         }
