@@ -894,9 +894,19 @@ def upload():
             # Process Excel file in memory
             data, count = excel_to_json_memory(file)
             
-            # Store data in memory instead of file
+            # Store data in memory and also save to file for persistence
             _state["json_data"] = data
             _state["record_count"] = count
+            
+            # Save to jira_data.json file for dashboard fetch requests
+            try:
+                json_file_path = os.path.join(BASE_DIR, "jira_data.json")
+                with open(json_file_path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                logger.info(f"Successfully saved {count} records to jira_data.json")
+            except Exception as json_error:
+                logger.warning(f"Failed to save jira_data.json: {json_error}")
+                # Continue without failing since data is in memory
             
             logger.info(f"Successfully processed {count} records in memory")
             
@@ -976,6 +986,157 @@ def download():
     except Exception as e:
         logger.error(f"Error in download route: {str(e)}")
         return Response(f"Download failed: {str(e)}", status=500)
+
+
+@app.route("/test-data")
+def test_data():
+    """Test endpoint to verify data loading"""
+    try:
+        # Check memory state
+        memory_data = _state.get("json_data")
+        memory_count = len(memory_data) if memory_data else 0
+        
+        # Check file
+        json_file_path = os.path.join(BASE_DIR, "jira_data.json")
+        file_exists = os.path.exists(json_file_path)
+        file_count = 0
+        file_error = None
+        
+        if file_exists:
+            try:
+                with open(json_file_path, 'r', encoding='utf-8') as f:
+                    file_data = json.load(f)
+                file_count = len(file_data)
+            except Exception as e:
+                file_error = str(e)
+        
+        # Create diagnostic HTML
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Data Loading Diagnostic</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+                .container {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                .status {{ padding: 15px; margin: 10px 0; border-radius: 5px; }}
+                .success {{ background: #d4edda; border-left: 4px solid #28a745; }}
+                .error {{ background: #f8d7da; border-left: 4px solid #dc3545; }}
+                .info {{ background: #d1ecf1; border-left: 4px solid #17a2b8; }}
+                .test-button {{ background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px; }}
+                #result {{ margin-top: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>JIRA Dashboard Data Diagnostic</h1>
+                
+                <h2>Current Status</h2>
+                <div class="status {'success' if memory_count > 0 else 'error'}">
+                    <strong>Memory State:</strong> {memory_count} records loaded
+                </div>
+                
+                <div class="status {'success' if file_exists else 'error'}">
+                    <strong>jira_data.json File:</strong> {'Exists' if file_exists else 'Missing'}
+                    {f'({file_count} records)' if file_exists and not file_error else ''}
+                    {f'<br>Error: {file_error}' if file_error else ''}
+                </div>
+                
+                <h2>Test Data Loading</h2>
+                <button class="test-button" onclick="testJsonEndpoint()">Test /jira_data.json</button>
+                <button class="test-button" onclick="testDashboardFetch()">Test Dashboard Fetch</button>
+                
+                <div id="result"></div>
+                
+                <h2>Actions</h2>
+                <p><a href="/">Upload New Data</a> | <a href="/preview">View Dashboard</a> | <a href="/dashboard">View Dashboard Template</a></p>
+                
+                <script>
+                    async function testJsonEndpoint() {{
+                        const result = document.getElementById('result');
+                        try {{
+                            const response = await fetch('/jira_data.json');
+                            const data = await response.json();
+                            if (response.ok) {{
+                                result.innerHTML = '<div class="status success"><strong>✓ Success:</strong> Loaded ' + (Array.isArray(data) ? data.length : Object.keys(data).length) + ' records from /jira_data.json</div>';
+                            }} else {{
+                                result.innerHTML = '<div class="status error"><strong>✗ Error:</strong> ' + (data.error || 'Unknown error') + '</div>';
+                            }}
+                        }} catch (error) {{
+                            result.innerHTML = '<div class="status error"><strong>✗ Fetch Error:</strong> ' + error.message + '</div>';
+                        }}
+                    }}
+                    
+                    async function testDashboardFetch() {{
+                        const result = document.getElementById('result');
+                        try {{
+                            // Simulate the exact same fetch call as dashboard.html
+                            const response = await fetch('jira_data.json');
+                            const text = await response.text();
+                            const data = JSON.parse(text.replace(/NaN/g, 'null'));
+                            result.innerHTML = '<div class="status success"><strong>✓ Dashboard Fetch Success:</strong> Loaded ' + data.length + ' records using dashboard method</div>';
+                        }} catch (error) {{
+                            result.innerHTML = '<div class="status error"><strong>✗ Dashboard Fetch Error:</strong> ' + error.message + '</div>';
+                        }}
+                    }}
+                </script>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+        
+    except Exception as e:
+        return f"Diagnostic failed: {str(e)}", 500
+
+
+@app.route("/jira_data.json")
+def serve_jira_data():
+    """Serve the JSON data for dashboard consumption"""
+    try:
+        # First try to get data from memory state
+        json_data = _state.get("json_data")
+        
+        # If not in memory, try to load from file
+        if not json_data:
+            json_file_path = os.path.join(BASE_DIR, "jira_data.json")
+            if os.path.exists(json_file_path):
+                try:
+                    with open(json_file_path, 'r', encoding='utf-8') as f:
+                        json_data = json.load(f)
+                    logger.info("Loaded data from jira_data.json file")
+                except Exception as file_error:
+                    logger.error(f"Failed to load jira_data.json: {file_error}")
+        
+        if not json_data:
+            return {"error": "No data available. Please upload and process an Excel file first."}, 400
+        
+        # Return the JSON data with proper content type
+        return Response(
+            json.dumps(json_data, ensure_ascii=False, indent=2),
+            mimetype='application/json',
+            headers={'Content-Type': 'application/json; charset=utf-8'}
+        )
+    except Exception as e:
+        logger.error(f"Error serving jira_data.json: {str(e)}")
+        return {"error": f"Failed to serve data: {str(e)}"}, 500
+
+
+@app.route("/dashboard")
+def serve_dashboard():
+    """Serve the dashboard.html template (requires separate jira_data.json fetch)"""
+    try:
+        template_path = os.path.join(BASE_DIR, "dashboard.html")
+        if not os.path.exists(template_path):
+            return "Dashboard template not found", 404
+        
+        with open(template_path, "r", encoding="utf-8") as f:
+            dashboard_content = f.read()
+        
+        return Response(dashboard_content, mimetype="text/html")
+    except Exception as e:
+        logger.error(f"Error serving dashboard: {str(e)}")
+        return Response(f"Dashboard failed to load: {str(e)}", status=500)
 
 
 @app.route("/preview")
