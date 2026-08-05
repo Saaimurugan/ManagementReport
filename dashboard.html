@@ -4092,18 +4092,28 @@
         // ===== Project Analytics Charts =====
         function toggleProjectAnalytics(projectId, projectName) {
             console.log('toggleProjectAnalytics called:', projectId, projectName);
+            console.log('Looking for container ID:', `analytics-${projectId}`);
+            console.log('Looking for toggle icon ID:', `toggle-analytics-${projectId}`);
+            
             const analyticsContainer = document.getElementById(`analytics-${projectId}`);
             const toggleIcon = document.getElementById(`toggle-analytics-${projectId}`);
             
             console.log('analyticsContainer found:', !!analyticsContainer);
             console.log('toggleIcon found:', !!toggleIcon);
             
+            if (!analyticsContainer) {
+                console.error('Analytics container not found for project:', projectName);
+                return;
+            }
+            
             if (analyticsContainer && analyticsContainer.style.display === 'none') {
+                console.log('Opening analytics for:', projectName);
                 analyticsContainer.style.display = 'block';
                 if (toggleIcon) toggleIcon.textContent = '▲';
                 createProjectAnalyticsCharts(projectName, projectId);
                 generateProjectTaskView(projectName, projectId);
             } else if (analyticsContainer) {
+                console.log('Closing analytics for:', projectName);
                 analyticsContainer.style.display = 'none';
                 if (toggleIcon) toggleIcon.textContent = '▼';
             }
@@ -4123,18 +4133,25 @@
         }
 
         function generateProjectTaskView(projectName, projectId) {
-            const containerId = `project-tasks-${projectName.replace(/\s+/g, '-').toLowerCase()}`;
-            const container = document.getElementById(containerId);
+            const container = document.getElementById(`project-tasks-${projectId}`);
+            console.log('Looking for container:', `project-tasks-${projectId}`);
+            console.log('Container found:', !!container);
+            
             if (!container) {
-                console.log('Container not found:', containerId);
+                console.log('Container not found:', `project-tasks-${projectId}`);
                 return;
             }
 
             // Get tasks for this specific project
+            console.log('Filtering data for project:', projectName);
+            console.log('Total filtered data:', filteredData.length);
+            
             const projectData = filteredData.filter(item => item.Project === projectName);
             console.log('Project data for', projectName, ':', projectData.length, 'tasks');
             
             if (projectData.length === 0) {
+                console.log('No data found for project:', projectName);
+                console.log('Available projects:', [...new Set(filteredData.map(item => item.Project))]);
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
