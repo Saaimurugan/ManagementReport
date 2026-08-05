@@ -1126,9 +1126,25 @@ def serve_jira_data():
 def serve_dashboard():
     """Serve the dashboard.html template (requires separate jira_data.json fetch)"""
     try:
+        # Ensure jira_data.json exists and has data
+        json_file_path = os.path.join(BASE_DIR, "jira_data.json")
+        if not os.path.exists(json_file_path):
+            # Try to create it from memory state if available
+            json_data = _state.get("json_data")
+            if json_data:
+                try:
+                    with open(json_file_path, 'w', encoding='utf-8') as f:
+                        json.dump(json_data, f, ensure_ascii=False, indent=2)
+                    logger.info("Created jira_data.json from memory state")
+                except Exception as e:
+                    logger.error(f"Failed to create jira_data.json: {e}")
+                    return Response("No data file available and failed to create one. Please upload an Excel file first.", status=400)
+            else:
+                return Response("No data available. Please upload an Excel file first.", status=400)
+        
         template_path = os.path.join(BASE_DIR, "dashboard.html")
         if not os.path.exists(template_path):
-            return "Dashboard template not found", 404
+            return Response("Dashboard template not found", status=404)
         
         with open(template_path, "r", encoding="utf-8") as f:
             dashboard_content = f.read()
@@ -1142,13 +1158,74 @@ def serve_dashboard():
 @app.route("/preview")
 def preview():
     try:
-        if not _state.get("standalone_html"):
-            return redirect(url_for("index"))
+        # DEBUG: Add debug info at the top
+        debug_info = []
         
-        return Response(_state["standalone_html"], mimetype="text/html")
+        # First try to get the generated standalone HTML from memory
+        standalone_html = _state.get("standalone_html")
+        debug_info.append(f"Memory HTML exists: {standalone_html is not None}")
+        
+        # If not in memory, try to generate it from existing data
+        if not standalone_html:
+            logger.info("No standalone HTML in memory, attempting to generate from available data")
+            debug_info.append("Generating HTML from data...")
+            
+            # Try to get data from memory first, then from file
+            json_data = _state.get("json_data")
+            debug_info.append(f"Memory data exists: {json_data is not None}")
+            debug_info.append(f"Memory data count: {len(json_data) if json_data else 0}")
+            
+            if not json_data:
+                json_file_path = os.path.join(BASE_DIR, "jira_data.json")
+                file_exists = os.path.exists(json_file_path)
+                debug_info.append(f"File exists: {file_exists}")
+                
+                if file_exists:
+                    try:
+                        with open(json_file_path, 'r', encoding='utf-8') as f:
+                            json_data = json.load(f)
+                        debug_info.append(f"Loaded {len(json_data)} records from file")
+                        logger.info("Loaded data from jira_data.json for preview")
+                    except Exception as e:
+                        debug_info.append(f"File load error: {str(e)}")
+                        logger.error(f"Failed to load jira_data.json: {e}")
+                        return Response(f"Debug info: {'; '.join(debug_info)}<br>Failed to load jira_data.json. Error: {str(e)}", status=400, mimetype="text/html")
+            
+            if json_data:
+                # Read dashboard template and generate standalone version
+                template_path = os.path.join(BASE_DIR, "dashboard.html")
+                template_exists = os.path.exists(template_path)
+                debug_info.append(f"Template exists: {template_exists}")
+                
+                if not template_exists:
+                    return Response(f"Debug info: {'; '.join(debug_info)}<br>Dashboard template not found", status=500, mimetype="text/html")
+                
+                with open(template_path, "r", encoding="utf-8") as f:
+                    template_content = f.read()
+                
+                debug_info.append(f"Template length: {len(template_content)}")
+                
+                try:
+                    standalone_html = build_standalone_memory(json_data, template_content)
+                    # Cache it in memory for future requests in this session
+                    _state["standalone_html"] = standalone_html
+                    debug_info.append("Generated standalone HTML successfully")
+                    logger.info("Successfully generated standalone dashboard for preview")
+                except Exception as e:
+                    debug_info.append(f"Generation error: {str(e)}")
+                    logger.error(f"Failed to generate standalone dashboard: {e}")
+                    return Response(f"Debug info: {'; '.join(debug_info)}<br>Failed to generate dashboard: {str(e)}", status=500, mimetype="text/html")
+            else:
+                return Response(f"Debug info: {'; '.join(debug_info)}<br>No data available. Please upload an Excel file first.", status=400, mimetype="text/html")
+        
+        # Add debug info as HTML comment at the top
+        debug_comment = f"<!-- DEBUG: {'; '.join(debug_info)} -->\n"
+        standalone_html = debug_comment + standalone_html
+        
+        return Response(standalone_html, mimetype="text/html")
     except Exception as e:
         logger.error(f"Error in preview route: {str(e)}")
-        return Response(f"Preview failed: {str(e)}", status=500)
+        return Response(f"Preview failed: {str(e)}<br>Debug: Check logs for details", status=500, mimetype="text/html")
 
 
 @app.route("/template")
