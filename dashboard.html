@@ -1301,7 +1301,19 @@
             color: #4299e1;
             margin-right: 8px;
             display: inline-block;
-            width: 12px;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 2px;
+            background: rgba(66, 153, 225, 0.1);
+            border: 1px solid rgba(66, 153, 225, 0.3);
+            transition: all 0.2s;
+        }
+
+        .toggle-icon:hover {
+            background: rgba(66, 153, 225, 0.2);
+            border-color: rgba(66, 153, 225, 0.5);
         }
             border-radius: 8px;
             margin: 10px;
@@ -4273,18 +4285,14 @@
                 
                 // Project level (Level 1)
                 html += `
-                    <div class="group-level-1" onclick="toggleGroup('project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
-                        <div class="group-header-content">
+                    <div class="group-level-1" onclick="toggleGroup('project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')" style="cursor: pointer; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
                             <div class="toggle-icon" id="toggle-project-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
-                            <div class="group-title">
-                                <span>📁</span>
-                                <span>${projectName}</span>
-                            </div>
+                            <span>📁</span>
+                            <span style="font-weight: 600;">${projectName}</span>
                         </div>
-                        <div class="group-summary">
-                            <div class="summary-badge">
-                                <span>${projectTasks.length} tasks</span>
-                            </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="background: rgba(0,0,0,0.05); padding: 3px 8px; border-radius: 10px; font-size: 0.85em;">${projectTasks.length} tasks</span>
                             <div class="metric-chips">
                                 <span class="metric-chip ${rollupRAG(projectTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
                                 <span class="metric-chip ${rollupRAG(projectTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
@@ -4303,18 +4311,14 @@
                     const epicRAG = rollupRAG(epicTasks);
                     
                     html += `
-                        <div class="group-level-2" onclick="toggleGroup('epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
-                            <div class="group-header-content">
+                        <div class="group-level-2" onclick="toggleGroup('epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')" style="cursor: pointer; padding: 10px; background: #e3f2fd; border-radius: 6px; margin: 4px 0 4px 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
                                 <div class="toggle-icon" id="toggle-epic-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
-                                <div class="group-title">
-                                    <span>🎯</span>
-                                    <span>${epicName}</span>
-                                </div>
+                                <span>🎯</span>
+                                <span style="font-weight: 600;">${epicName}</span>
                             </div>
-                            <div class="group-summary">
-                                <div class="summary-badge">
-                                    <span>${epicTasks.length} tasks</span>
-                                </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span style="background: rgba(0,0,0,0.05); padding: 3px 8px; border-radius: 10px; font-size: 0.85em;">${epicTasks.length} tasks</span>
                                 <div class="metric-chips">
                                     <span class="metric-chip ${rollupRAG(epicTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
                                     <span class="metric-chip ${rollupRAG(epicTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
@@ -4332,18 +4336,14 @@
                         const storyRAG = rollupRAG(storyTasks);
                         
                         html += `
-                            <div class="group-level-3" onclick="toggleGroup('story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')">
-                                <div class="group-header-content">
+                            <div class="group-level-3" onclick="toggleGroup('story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}')" style="cursor: pointer; padding: 8px; background: #f1f8e9; border-radius: 4px; margin: 2px 0 2px 40px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
                                     <div class="toggle-icon" id="toggle-story-${projectName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${epicName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}-${storyName.replace(/\\s+/g, '-').replace(/[^\\w-]/g, '')}">▶</div>
-                                    <div class="group-title">
-                                        <span>📖</span>
-                                        <span>${storyName}</span>
-                                    </div>
+                                    <span>📖</span>
+                                    <span style="font-weight: 600;">${storyName}</span>
                                 </div>
-                                <div class="group-summary">
-                                    <div class="summary-badge">
-                                        <span>${storyTasks.length} tasks</span>
-                                    </div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <span style="background: rgba(0,0,0,0.05); padding: 3px 8px; border-radius: 10px; font-size: 0.85em;">${storyTasks.length} tasks</span>
                                     <div class="metric-chips">
                                         <span class="metric-chip ${rollupRAG(storyTasks.map(t => ({ _ragStatus: t._effortsRAG })))}">E</span>
                                         <span class="metric-chip ${rollupRAG(storyTasks.map(t => ({ _ragStatus: t._timelineRAG })))}">T</span>
